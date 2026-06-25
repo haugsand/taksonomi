@@ -1,0 +1,35 @@
+.game {
+  background-color: var(--bg);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-height: 100vh;
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow-x: visible;
+  overflow-y: hidden;
+}
+
+.game__status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: var(--fg);
+}
+
+.game__status--error {
+  color: oklch(0.6 0.2 25);
+}
+
+.game__status button {
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
