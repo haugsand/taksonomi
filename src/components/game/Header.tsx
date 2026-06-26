@@ -14,9 +14,10 @@ const GAME_SIZES: GameSize[] = [
   { label: "XS", groups: 10, wordsPerGroup: 10 },
   { label: "S", groups: 15, wordsPerGroup: 15 },
   { label: "M", groups: 20, wordsPerGroup: 20 },
-  { label: "L", groups: 30, wordsPerGroup: 30 },
-  { label: "XL", groups: 40, wordsPerGroup: 40 },
-  { label: "XXL", groups: 50, wordsPerGroup: 50 },
+  { label: "L", groups: 25, wordsPerGroup: 25 },
+  { label: "XL", groups: 30, wordsPerGroup: 30 },
+  { label: "XXL", groups: 35, wordsPerGroup: 35 },
+  { label: "XXXL", groups: 40, wordsPerGroup: 40 },
 ];
 
 type Props = {

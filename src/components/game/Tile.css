@@ -26,7 +26,7 @@
 }
 
 .tile--group {
-  max-width: 20rem;
+  max-width: 18rem;
   min-width: 0;
   background-color: oklch(var(--group-bg-l) var(--group-bg-c) var(--group-hue, 0));
   color: oklch(var(--group-fg-l) var(--group-fg-c) var(--group-hue, 0));
