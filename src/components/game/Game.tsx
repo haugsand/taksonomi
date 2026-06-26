@@ -92,6 +92,11 @@ export function Game() {
   const reset = useCallback(async () => {
     setLoading(true);
     setError(null);
+    // Clear the board immediately so it is empty until the new game loads.
+    setActiveCategories([]);
+    setTiles([]);
+    setSelectedId(null);
+    setExpandedIds(new Set());
     try {
       const picked = await fetchNewGame(groupCount, wordsPerGroup);
       const initial: TileData[] = picked.flatMap((c) =>
