@@ -23,6 +23,10 @@ type Props = {
   isDragOver: boolean;
   isExpanded: boolean;
   disabled: boolean;
+  /** When set, the tile animates in with this delay (ms) — used on new game. */
+  enterDelay?: number;
+  /** When set, the tile animates out with this delay (ms) — used on new game. */
+  leaveDelay?: number;
   onClick: () => void;
   onDragStart: (e: DragEvent<HTMLButtonElement>) => void;
   onDragEnd: () => void;
@@ -43,6 +47,8 @@ export function Tile(props: Props) {
     isDragOver,
     isExpanded,
     disabled,
+    enterDelay,
+    leaveDelay,
   } = props;
 
   const isGroup = tile.words.length > 1;
@@ -56,11 +62,15 @@ export function Tile(props: Props) {
   if (isMerged) classes.push("tile--merged");
   if (isDragging) classes.push("tile--dragging");
   if (isShaking) classes.push("tile--shake");
+  if (leaveDelay !== undefined) classes.push("tile--leave");
+  else if (enterDelay !== undefined) classes.push("tile--enter");
 
-  const style: CSSProperties | undefined =
-    !isComplete && tile.hue !== undefined
-      ? ({ ["--group-hue" as string]: tile.hue } as CSSProperties)
-      : undefined;
+  const style: CSSProperties = {};
+  if (!isComplete && tile.hue !== undefined) {
+    (style as Record<string, unknown>)["--group-hue"] = tile.hue;
+  }
+  const animDelay = leaveDelay ?? enterDelay;
+  if (animDelay !== undefined) style.animationDelay = `${animDelay}ms`;
 
   const showWords = !isComplete || isExpanded;
 

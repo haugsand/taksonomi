@@ -5,7 +5,7 @@ import { fetchNewGame } from "@/lib/api";
 import { randomHue } from "@/lib/palette";
 
 type DragEvent<T extends EventTarget> = JSX.TargetedDragEvent<T>;
-import { Header } from "./Header";
+import { Header, GAME_SIZES } from "./Header";
 import { Board } from "./Board";
 import { Tile, type TileData } from "./Tile";
 import { CompletionBanner } from "./CompletionBanner";
@@ -17,6 +17,14 @@ const THEME_KEY = "taksonomi:theme:v1";
 const STORAGE_KEY = "taksonomi:state:v3";
 const SIZE_KEY = "taksonomi:size:v1";
 const DEFAULT_SIZE = { groups: 15, wordsPerGroup: 15 };
+/** Total time window (ms) over which all tiles stagger in on a new game. */
+const ENTER_WINDOW_MS = 700;
+/** Time window (ms) over which the previous game's tiles stagger out. */
+const LEAVE_WINDOW_MS = 350;
+/** Duration (ms) of a single tile's leave animation (matches the CSS). */
+const LEAVE_ANIM_MS = 250;
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -56,7 +64,49 @@ export function Game() {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [enterDelays, setEnterDelays] = useState<Map<string, number> | null>(null);
+  const [leavingDelays, setLeavingDelays] = useState<Map<string, number> | null>(null);
   const [theme, setTheme] = useState<Theme>("dark");
+
+  // Always-current tiles, so reset() can read them without being in its deps.
+  const tilesRef = useRef<TileData[]>([]);
+  tilesRef.current = tiles;
+
+  // Prefetch cache: size key -> ready game or in-flight request.
+  const gameCache = useRef(new Map<string, Category[] | Promise<Category[]>>());
+
+  const prefetch = useCallback((g: number, w: number) => {
+    const key = `${g}:${w}`;
+    if (gameCache.current.has(key)) return;
+    const p = fetchNewGame(g, w);
+    gameCache.current.set(key, p);
+    p.then(
+      (cats) => {
+        if (gameCache.current.get(key) === p) gameCache.current.set(key, cats);
+      },
+      () => {
+        if (gameCache.current.get(key) === p) gameCache.current.delete(key);
+      },
+    );
+  }, []);
+
+  // Returns a game for the size, instantly from cache when available, and tops
+  // the cache back up for next time.
+  const getGame = useCallback(
+    (g: number, w: number): Promise<Category[]> => {
+      const key = `${g}:${w}`;
+      const entry = gameCache.current.get(key);
+      gameCache.current.delete(key);
+      const result = entry ? Promise.resolve(entry) : fetchNewGame(g, w);
+      prefetch(g, w);
+      return result;
+    },
+    [prefetch],
+  );
+
+  const prefetchAll = useCallback(() => {
+    for (const s of GAME_SIZES) prefetch(s.groups, s.wordsPerGroup);
+  }, [prefetch]);
 
   useEffect(() => {
     try {
@@ -92,26 +142,63 @@ export function Game() {
   const reset = useCallback(async () => {
     setLoading(true);
     setError(null);
-    // Clear the board immediately so it is empty until the new game loads.
-    setActiveCategories([]);
-    setTiles([]);
+    setEnterDelays(null);
     setSelectedId(null);
-    setExpandedIds(new Set());
+
+    // Start fetching right away — often instant from the prefetch cache — so the
+    // request runs in parallel with the exit animation below.
+    const dataPromise = getGame(groupCount, wordsPerGroup);
+
+    // Animate the previous game's tiles out (staggered, random order) instead of
+    // clearing the board abruptly.
+    const leaving = tilesRef.current;
+    if (leaving.length > 0) {
+      const n = leaving.length;
+      const step = Math.min(16, LEAVE_WINDOW_MS / n);
+      const ranks = shuffle([...Array(n).keys()]);
+      const out = new Map<string, number>();
+      leaving.forEach((t, i) => out.set(t.id, ranks[i] * step));
+      setLeavingDelays(out);
+      await sleep((n - 1) * step + LEAVE_ANIM_MS);
+      setActiveCategories([]);
+      setTiles([]);
+    }
+
     try {
-      const picked = await fetchNewGame(groupCount, wordsPerGroup);
+      const picked = await dataPromise;
+      // Clear leave markers before the new tiles render so a repeated word id
+      // can't inherit the exit animation.
+      setLeavingDelays(null);
       const initial: TileData[] = picked.flatMap((c) =>
         c.words.map((w) => ({ id: `${c.name}::${w}`, words: [w], categoryName: c.name })),
       );
+      const shuffled = shuffle(initial);
+      // Stagger each tile's entrance in a random order, capped so big boards
+      // still finish quickly (one and one word pops in).
+      const n = shuffled.length;
+      const step = Math.min(22, ENTER_WINDOW_MS / Math.max(1, n));
+      const ranks = shuffle([...Array(n).keys()]);
+      const delays = new Map<string, number>();
+      shuffled.forEach((t, i) => delays.set(t.id, ranks[i] * step));
       setActiveCategories(picked);
-      setTiles(shuffle(initial));
-      setSelectedId(null);
+      setTiles(shuffled);
+      setEnterDelays(delays);
       setExpandedIds(new Set());
+      // Drop the entrance delays once the animation is done so later re-renders
+      // don't replay it.
+      const total = (n - 1) * step + 400;
+      setTimeout(() => setEnterDelays((cur) => (cur === delays ? null : cur)), total);
+      // Keep every size warm for the next "new game".
+      setTimeout(prefetchAll, 800);
     } catch (e) {
+      setLeavingDelays(null);
+      setActiveCategories([]);
+      setTiles([]);
       setError(e instanceof Error ? e.message : "Kunne ikke hente nytt spill");
     } finally {
       setLoading(false);
     }
-  }, [groupCount, wordsPerGroup]);
+  }, [groupCount, wordsPerGroup, getGame, prefetchAll]);
 
   useEffect(() => {
     try {
@@ -141,6 +228,13 @@ export function Game() {
     reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupCount, wordsPerGroup]);
+
+  // Warm the cache with a game of every size shortly after mount, so the first
+  // "new game" of any size is instant too.
+  useEffect(() => {
+    const id = setTimeout(prefetchAll, 600);
+    return () => clearTimeout(id);
+  }, [prefetchAll]);
 
   useEffect(() => {
     if (activeCategories.length === 0) return;
@@ -202,6 +296,7 @@ export function Game() {
   }
 
   function handleClick(id: string) {
+    if (loading) return;
     const tile = tiles.find((t) => t.id === id);
     const cat = tile ? catByName.get(tile.categoryName) : null;
     const isComplete = !!tile && !!cat && tile.words.length === cat.words.length;
@@ -306,6 +401,8 @@ export function Game() {
       <Tile
         key={t.id}
         tile={t}
+        enterDelay={enterDelays?.get(t.id)}
+        leaveDelay={leavingDelays?.get(t.id)}
         categoryName={cat.name}
         categorySize={cat.words.length}
         isSelected={selectedId === t.id}
@@ -314,7 +411,7 @@ export function Game() {
         isDragging={draggingId === t.id}
         isDragOver={dragOverId === t.id && draggingId !== null && draggingId !== t.id}
         isExpanded={expandedIds.has(t.id)}
-        disabled={done}
+        disabled={done || loading}
         onClick={() => handleClick(t.id)}
         onDragStart={(e: DragEvent<HTMLButtonElement>) => {
           if (e.dataTransfer) {

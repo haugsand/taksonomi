@@ -9,7 +9,7 @@ type GameSize = {
   wordsPerGroup: number;
 };
 
-const GAME_SIZES: GameSize[] = [
+export const GAME_SIZES: GameSize[] = [
   { label: "XXS", groups: 5, wordsPerGroup: 5 },
   { label: "XS", groups: 10, wordsPerGroup: 10 },
   { label: "S", groups: 15, wordsPerGroup: 15 },
