@@ -1,5 +1,5 @@
 import { render } from "preact";
-import { Game } from "@/components/game/Game";
+import { Game } from "@/components/Game";
 import "./styles.css";
 
 const root = document.getElementById("root");

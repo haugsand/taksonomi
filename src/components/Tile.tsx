@@ -1,16 +1,11 @@
 import type { JSX } from "preact";
+import type { TileData } from "@/lib/types";
 import "./Tile.css";
+
+export type { TileData };
 
 type CSSProperties = JSX.CSSProperties;
 type DragEvent<T extends EventTarget> = JSX.TargetedDragEvent<T>;
-
-export type TileData = {
-  id: string;
-  words: string[];
-  categoryName: string;
-  hue?: number;
-  row?: number;
-};
 
 type Props = {
   tile: TileData;
