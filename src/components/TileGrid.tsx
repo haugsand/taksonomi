@@ -1,10 +1,9 @@
-import { useState } from "preact/hooks";
-import type { JSX, RefObject } from "preact";
+import type { RefObject } from "preact";
 import type { Category, TileData } from "@/lib/types";
+import { isTileComplete } from "@/lib/tiles";
+import { useTileDrag } from "@/hooks/useTileDrag";
 import { Board } from "./Board";
 import { Tile } from "./Tile";
-
-type DragEvent<T extends EventTarget> = JSX.TargetedDragEvent<T>;
 
 type Props = {
   rows: TileData[][];
@@ -40,8 +39,7 @@ export function TileGrid(props: Props) {
     onCombine,
   } = props;
 
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const { getTileDragProps } = useTileDrag(onCombine);
 
   const renderTile = (t: TileData) => {
     const cat = catByName.get(t.categoryName);
@@ -57,39 +55,10 @@ export function TileGrid(props: Props) {
         isSelected={selectedId === t.id}
         isShaking={shakeIds.includes(t.id)}
         isMerged={justMergedId === t.id}
-        isDragging={draggingId === t.id}
-        isDragOver={dragOverId === t.id && draggingId !== null && draggingId !== t.id}
         isExpanded={expandedIds.has(t.id)}
         disabled={done || loading}
         onClick={() => onTileClick(t.id)}
-        onDragStart={(e: DragEvent<HTMLButtonElement>) => {
-          if (e.dataTransfer) {
-            e.dataTransfer.setData("text/plain", t.id);
-            e.dataTransfer.effectAllowed = "move";
-          }
-          setDraggingId(t.id);
-        }}
-        onDragEnd={() => {
-          setDraggingId(null);
-          setDragOverId(null);
-        }}
-        onDragOver={(e: DragEvent<HTMLButtonElement>) => {
-          if (draggingId && draggingId !== t.id) {
-            e.preventDefault();
-            if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-            if (dragOverId !== t.id) setDragOverId(t.id);
-          }
-        }}
-        onDragLeave={() => {
-          if (dragOverId === t.id) setDragOverId(null);
-        }}
-        onDrop={(e: DragEvent<HTMLButtonElement>) => {
-          e.preventDefault();
-          const srcId = e.dataTransfer?.getData("text/plain") || draggingId;
-          setDragOverId(null);
-          setDraggingId(null);
-          if (srcId && srcId !== t.id) onCombine(srcId, t.id);
-        }}
+        {...getTileDragProps(t.id)}
       />
     );
   };
@@ -97,12 +66,7 @@ export function TileGrid(props: Props) {
   return (
     <Board boardRef={boardRef}>
       {rows.map((row, i) => {
-        const isCompletedRow =
-          row.length > 0 &&
-          row.every((t) => {
-            const cat = catByName.get(t.categoryName);
-            return !!cat && t.words.length === cat.words.length;
-          });
+        const isCompletedRow = row.length > 0 && row.every((t) => isTileComplete(t, catByName));
         return (
           <div
             key={i}

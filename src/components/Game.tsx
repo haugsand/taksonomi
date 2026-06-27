@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import type { Category, TileData } from "@/lib/types";
 import { shuffle, sleep } from "@/lib/util";
 import { staggerDelays } from "@/lib/animation";
-import { buildInitialTiles, combineTiles, countCompleted } from "@/lib/tiles";
+import { buildInitialTiles, combineTiles, countCompleted, isTileComplete } from "@/lib/tiles";
 import { assignRows, groupIntoRows } from "@/lib/layout";
 import { clearGameState, loadGameState, saveGameState } from "@/lib/storage";
 import { useTheme } from "@/hooks/useTheme";
@@ -17,10 +17,18 @@ import "./Game.css";
 
 /** Total time window (ms) over which all tiles stagger in on a new game. */
 const ENTER_WINDOW_MS = 700;
+/** Largest delay (ms) added between consecutive tile entrances. */
+const ENTER_MAX_STEP_MS = 22;
+/** Duration (ms) of a single tile's enter animation (matches the CSS). */
+const ENTER_ANIM_MS = 400;
 /** Time window (ms) over which the previous game's tiles stagger out. */
 const LEAVE_WINDOW_MS = 350;
+/** Largest delay (ms) added between consecutive tile exits. */
+const LEAVE_MAX_STEP_MS = 16;
 /** Duration (ms) of a single tile's leave animation (matches the CSS). */
 const LEAVE_ANIM_MS = 250;
+/** Delay (ms) after a new game before refilling the prefetch cache. */
+const PREFETCH_REFILL_MS = 800;
 /** Sentinel row index for completed categories: always sorts to the bottom. */
 const COMPLETED_ROW = Number.MAX_SAFE_INTEGER;
 
@@ -66,7 +74,7 @@ export function Game() {
     if (leaving.length > 0) {
       const { delays, totalMs } = staggerDelays(
         leaving.map((t) => t.id),
-        { windowMs: LEAVE_WINDOW_MS, maxStep: 16, tailMs: LEAVE_ANIM_MS },
+        { windowMs: LEAVE_WINDOW_MS, maxStep: LEAVE_MAX_STEP_MS, tailMs: LEAVE_ANIM_MS },
       );
       setLeavingDelays(delays);
       await sleep(totalMs);
@@ -84,7 +92,7 @@ export function Game() {
       // still finish quickly (one and one word pops in).
       const { delays, totalMs } = staggerDelays(
         shuffled.map((t) => t.id),
-        { windowMs: ENTER_WINDOW_MS, maxStep: 22, tailMs: 400 },
+        { windowMs: ENTER_WINDOW_MS, maxStep: ENTER_MAX_STEP_MS, tailMs: ENTER_ANIM_MS },
       );
       setActiveCategories(picked);
       setTiles(shuffled);
@@ -94,7 +102,7 @@ export function Game() {
       // don't replay it.
       setTimeout(() => setEnterDelays((cur) => (cur === delays ? null : cur)), totalMs);
       // Keep every size warm for the next "new game".
-      setTimeout(prefetchAll, 800);
+      setTimeout(prefetchAll, PREFETCH_REFILL_MS);
     } catch (e) {
       setLeavingDelays(null);
       setActiveCategories([]);
@@ -143,11 +151,10 @@ export function Game() {
       // When a merge completes a category, move it down to the reserved bottom
       // row; partial merges stay where they are.
       const merged = outcome.tiles.find((t) => t.id === outcome.mergedId);
-      const cat = merged && catByName.get(merged.categoryName);
-      const completed = !!merged && !!cat && merged.words.length === cat.words.length;
-      const next = completed
-        ? outcome.tiles.map((t) => (t.id === outcome.mergedId ? { ...t, row: COMPLETED_ROW } : t))
-        : outcome.tiles;
+      const next =
+        merged && isTileComplete(merged, catByName)
+          ? outcome.tiles.map((t) => (t.id === outcome.mergedId ? { ...t, row: COMPLETED_ROW } : t))
+          : outcome.tiles;
       setTiles(next);
       setJustMergedId(outcome.mergedId);
       setTimeout(() => setJustMergedId(null), 600);
@@ -157,9 +164,7 @@ export function Game() {
   function handleClick(id: string) {
     if (loading) return;
     const tile = tiles.find((t) => t.id === id);
-    const cat = tile ? catByName.get(tile.categoryName) : null;
-    const isComplete = !!tile && !!cat && tile.words.length === cat.words.length;
-    if (isComplete) {
+    if (tile && isTileComplete(tile, catByName)) {
       setExpandedIds((prev) => {
         const next = new Set(prev);
         if (next.has(id)) next.delete(id);

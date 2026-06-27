@@ -8,14 +8,15 @@ export function buildInitialTiles(categories: Category[]): TileData[] {
   );
 }
 
+/** Whether a tile holds every word of its category, i.e. the group is solved. */
+export function isTileComplete(tile: TileData, catByName: Map<string, Category>): boolean {
+  const cat = catByName.get(tile.categoryName);
+  return !!cat && tile.words.length === cat.words.length;
+}
+
 /** Number of tiles that fully cover their category. */
 export function countCompleted(tiles: TileData[], catByName: Map<string, Category>): number {
-  let n = 0;
-  for (const t of tiles) {
-    const cat = catByName.get(t.categoryName);
-    if (cat && t.words.length === cat.words.length) n++;
-  }
-  return n;
+  return tiles.reduce((n, t) => n + (isTileComplete(t, catByName) ? 1 : 0), 0);
 }
 
 export type CombineOutcome =
