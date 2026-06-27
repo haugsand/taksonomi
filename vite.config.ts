@@ -1,4 +1,5 @@
-import { defineConfig, type Connect, type Plugin } from "vite";
+import { defineConfig } from "vitest/config";
+import type { Connect, Plugin } from "vite";
 import preact from "@preact/preset-vite";
 import path from "node:path";
 import { pickCategories } from "./server/pickCategories";
@@ -39,4 +40,8 @@ export default defineConfig({
     alias: { "@": path.resolve(__dirname, "./src") },
   },
   server: { host: "::", port: 8080, strictPort: true },
+  test: {
+    environment: "happy-dom",
+    include: ["src/**/*.test.ts"],
+  },
 });
