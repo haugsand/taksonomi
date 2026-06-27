@@ -21,6 +21,8 @@ const ENTER_WINDOW_MS = 700;
 const LEAVE_WINDOW_MS = 350;
 /** Duration (ms) of a single tile's leave animation (matches the CSS). */
 const LEAVE_ANIM_MS = 250;
+/** Sentinel row index for completed categories: always sorts to the bottom. */
+const COMPLETED_ROW = Number.MAX_SAFE_INTEGER;
 
 export function Game() {
   const [size, setSize] = usePersistentSize();
@@ -138,7 +140,15 @@ export function Game() {
       setShakeIds(outcome.ids);
       setTimeout(() => setShakeIds([]), 400);
     } else if (outcome.kind === "merged") {
-      setTiles(outcome.tiles);
+      // When a merge completes a category, move it down to the reserved bottom
+      // row; partial merges stay where they are.
+      const merged = outcome.tiles.find((t) => t.id === outcome.mergedId);
+      const cat = merged && catByName.get(merged.categoryName);
+      const completed = !!merged && !!cat && merged.words.length === cat.words.length;
+      const next = completed
+        ? outcome.tiles.map((t) => (t.id === outcome.mergedId ? { ...t, row: COMPLETED_ROW } : t))
+        : outcome.tiles;
+      setTiles(next);
       setJustMergedId(outcome.mergedId);
       setTimeout(() => setJustMergedId(null), 600);
     }
@@ -172,10 +182,12 @@ export function Game() {
   const { boardRef, rowCount } = useRowCount([activeCategories, done]);
 
   // Assign tiles to rows once we know how many rows fit and any are unplaced.
+  // The bottom row is reserved for completed categories, so the words are laid
+  // out across the rows above it.
   useEffect(() => {
     if (rowCount <= 0 || tiles.length === 0) return;
     if (tiles.every((t) => typeof t.row === "number")) return;
-    setTiles(assignRows(tiles, rowCount));
+    setTiles(assignRows(tiles, Math.max(1, rowCount - 1)));
   }, [tiles, rowCount]);
 
   const rows = useMemo(() => groupIntoRows(tiles), [tiles]);

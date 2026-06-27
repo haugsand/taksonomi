@@ -96,11 +96,22 @@ export function TileGrid(props: Props) {
 
   return (
     <Board boardRef={boardRef}>
-      {rows.map((row, i) => (
-        <div key={i} className="board__row">
-          {row.map(renderTile)}
-        </div>
-      ))}
+      {rows.map((row, i) => {
+        const isCompletedRow =
+          row.length > 0 &&
+          row.every((t) => {
+            const cat = catByName.get(t.categoryName);
+            return !!cat && t.words.length === cat.words.length;
+          });
+        return (
+          <div
+            key={i}
+            className={isCompletedRow ? "board__row board__row--completed" : "board__row"}
+          >
+            {row.map(renderTile)}
+          </div>
+        );
+      })}
     </Board>
   );
 }
