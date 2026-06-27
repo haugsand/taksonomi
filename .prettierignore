@@ -1,5 +1,7 @@
-node_modules
+.claude
+.netlify
 dist
+node_modules
 .output
 .vinxi
 pnpm-lock.yaml
@@ -9,3 +11,4 @@ routeTree.gen.ts
 
 # Auto-generated category data
 server/categories-data.ts
+scripts
