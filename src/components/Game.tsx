@@ -11,7 +11,8 @@ import { useGameSource } from "@/hooks/useGameSource";
 import { useRowCount } from "@/hooks/useRowCount";
 import { Header } from "./Header";
 import { TileGrid } from "./TileGrid";
-import { CompletionBanner } from "./CompletionBanner";
+import { CompletedBoard } from "./CompletedBoard";
+import { CompletionModal } from "./CompletionModal";
 import { ProgressBar } from "./ProgressBar";
 import "./Game.css";
 
@@ -29,8 +30,8 @@ const LEAVE_MAX_STEP_MS = 16;
 const LEAVE_ANIM_MS = 250;
 /** Delay (ms) after a new game before refilling the prefetch cache. */
 const PREFETCH_REFILL_MS = 800;
-/** Sentinel row index for completed categories: always sorts to the bottom. */
-const COMPLETED_ROW = Number.MAX_SAFE_INTEGER;
+/** Duration (ms) of the tile fade-out for completed categories (matches tile--fadeout in Tile.css). */
+const TILE_FADEOUT_MS = 5000;
 
 export function Game() {
   const [size, setSize] = usePersistentSize();
@@ -48,6 +49,9 @@ export function Game() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [enterDelays, setEnterDelays] = useState<Map<string, number> | null>(null);
   const [leavingDelays, setLeavingDelays] = useState<Map<string, number> | null>(null);
+  const [endBoardVisible, setEndBoardVisible] = useState(false);
+  const [finalModal, setFinalModal] = useState(false);
+  const [fadingOutId, setFadingOutId] = useState<string | null>(null);
 
   // Always-current tiles, so reset() can read them without being in its deps.
   const tilesRef = useRef<TileData[]>([]);
@@ -63,6 +67,9 @@ export function Game() {
     setError(null);
     setEnterDelays(null);
     setSelectedId(null);
+    setFinalModal(false);
+    setFadingOutId(null);
+    setEndBoardVisible(false);
 
     // Start fetching right away — often instant from the prefetch cache — so the
     // request runs in parallel with the exit animation below.
@@ -148,32 +155,32 @@ export function Game() {
       setShakeIds(outcome.ids);
       setTimeout(() => setShakeIds([]), 400);
     } else if (outcome.kind === "merged") {
-      // When a merge completes a category, move it down to the reserved bottom
-      // row; partial merges stay where they are.
-      const merged = outcome.tiles.find((t) => t.id === outcome.mergedId);
-      const next =
-        merged && isTileComplete(merged, catByName)
-          ? outcome.tiles.map((t) => (t.id === outcome.mergedId ? { ...t, row: COMPLETED_ROW } : t))
-          : outcome.tiles;
-      setTiles(next);
+      setTiles(outcome.tiles);
       setJustMergedId(outcome.mergedId);
-      setTimeout(() => setJustMergedId(null), 600);
+      const merged = outcome.tiles.find((t) => t.id === outcome.mergedId);
+      if (merged && isTileComplete(merged, catByName)) {
+        const isFinal = countCompleted(outcome.tiles, catByName) === activeCategories.length;
+        const mergedId = merged.id;
+        // After the pop animation, start the 5-second fade immediately.
+        setTimeout(() => {
+          setJustMergedId(null);
+          setFadingOutId(mergedId);
+          setTimeout(() => {
+            setFadingOutId(null);
+            setTiles((ts) => ts.map((t) => (t.id === mergedId ? { ...t, hidden: true } : t)));
+            if (isFinal) setFinalModal(true);
+          }, TILE_FADEOUT_MS);
+        }, 600);
+      } else {
+        setTimeout(() => setJustMergedId(null), 600);
+      }
     }
   }
 
   function handleClick(id: string) {
-    if (loading) return;
+    if (loading || finalModal || done) return;
     const tile = tiles.find((t) => t.id === id);
-    if (tile && isTileComplete(tile, catByName)) {
-      setExpandedIds((prev) => {
-        const next = new Set(prev);
-        if (next.has(id)) next.delete(id);
-        else next.add(id);
-        return next;
-      });
-      return;
-    }
-    if (done) return;
+    if (!tile || isTileComplete(tile, catByName)) return;
     if (selectedId === null) {
       setSelectedId(id);
     } else if (selectedId === id) {
@@ -186,16 +193,17 @@ export function Game() {
 
   const { boardRef, rowCount } = useRowCount([activeCategories, done]);
 
-  // Assign tiles to rows once we know how many rows fit and any are unplaced.
-  // The bottom row is reserved for completed categories, so the words are laid
-  // out across the rows above it.
+  // Assign tiles to rows once we know how many rows fit and any are unplaced,
+  // spreading the words evenly across every row.
   useEffect(() => {
     if (rowCount <= 0 || tiles.length === 0) return;
     if (tiles.every((t) => typeof t.row === "number")) return;
-    setTiles(assignRows(tiles, Math.max(1, rowCount - 1)));
+    setTiles(assignRows(tiles, rowCount));
   }, [tiles, rowCount]);
 
-  const rows = useMemo(() => groupIntoRows(tiles), [tiles]);
+  // Completed categories are hidden from the board until the game ends.
+  const visibleTiles = useMemo(() => tiles.filter((t) => !t.hidden), [tiles]);
+  const rows = useMemo(() => groupIntoRows(visibleTiles), [visibleTiles]);
 
   return (
     <div className="game">
@@ -214,10 +222,21 @@ export function Game() {
           }
         }}
       />
-      {done && (
-        <CompletionBanner
-          wordCount={groupCount * wordsPerGroup}
-          categoryCount={activeCategories.length}
+      {finalModal && (
+        <CompletionModal
+          onShowAll={() => {
+            setFinalModal(false);
+            setEndBoardVisible(true);
+          }}
+          onNewGame={(s) => {
+            setFinalModal(false);
+            clearGameState();
+            if (s.groups === groupCount && s.wordsPerGroup === wordsPerGroup) {
+              reset();
+            } else {
+              setSize({ groups: s.groups, wordsPerGroup: s.wordsPerGroup });
+            }
+          }}
         />
       )}
       {error && (
@@ -228,21 +247,26 @@ export function Game() {
           </button>
         </div>
       )}
-      <TileGrid
-        rows={rows}
-        boardRef={boardRef}
-        catByName={catByName}
-        selectedId={selectedId}
-        shakeIds={shakeIds}
-        justMergedId={justMergedId}
-        expandedIds={expandedIds}
-        enterDelays={enterDelays}
-        leavingDelays={leavingDelays}
-        done={done}
-        loading={loading}
-        onTileClick={handleClick}
-        onCombine={combine}
-      />
+      {endBoardVisible ? (
+        <CompletedBoard categories={activeCategories} boardRef={boardRef} />
+      ) : (
+        <TileGrid
+          rows={rows}
+          boardRef={boardRef}
+          catByName={catByName}
+          selectedId={selectedId}
+          shakeIds={shakeIds}
+          justMergedId={justMergedId}
+          fadingOutId={fadingOutId}
+          expandedIds={expandedIds}
+          enterDelays={enterDelays}
+          leavingDelays={leavingDelays}
+          done={done}
+          loading={loading}
+          onTileClick={handleClick}
+          onCombine={combine}
+        />
+      )}
     </div>
   );
 }

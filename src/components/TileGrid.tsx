@@ -1,6 +1,5 @@
 import type { RefObject } from "preact";
 import type { Category, TileData } from "@/lib/types";
-import { isTileComplete } from "@/lib/tiles";
 import { useTileDrag } from "@/hooks/useTileDrag";
 import { Board } from "./Board";
 import { Tile } from "./Tile";
@@ -12,6 +11,7 @@ type Props = {
   selectedId: string | null;
   shakeIds: string[];
   justMergedId: string | null;
+  fadingOutId: string | null;
   expandedIds: Set<string>;
   enterDelays: Map<string, number> | null;
   leavingDelays: Map<string, number> | null;
@@ -30,6 +30,7 @@ export function TileGrid(props: Props) {
     selectedId,
     shakeIds,
     justMergedId,
+    fadingOutId,
     expandedIds,
     enterDelays,
     leavingDelays,
@@ -50,6 +51,7 @@ export function TileGrid(props: Props) {
         tile={t}
         enterDelay={enterDelays?.get(t.id)}
         leaveDelay={leavingDelays?.get(t.id)}
+        isFadingOut={fadingOutId === t.id}
         categoryName={cat.name}
         categorySize={cat.words.length}
         isSelected={selectedId === t.id}
@@ -65,17 +67,11 @@ export function TileGrid(props: Props) {
 
   return (
     <Board boardRef={boardRef}>
-      {rows.map((row, i) => {
-        const isCompletedRow = row.length > 0 && row.every((t) => isTileComplete(t, catByName));
-        return (
-          <div
-            key={i}
-            className={isCompletedRow ? "board__row board__row--completed" : "board__row"}
-          >
-            {row.map(renderTile)}
-          </div>
-        );
-      })}
+      {rows.map((row, i) => (
+        <div key={i} className="board__row">
+          {row.map(renderTile)}
+        </div>
+      ))}
     </Board>
   );
 }

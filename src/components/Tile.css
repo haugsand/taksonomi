@@ -60,9 +60,22 @@
     transform: scale(0.6);
   }
 }
+@keyframes tile-fadeout {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
 
 .tile--leave {
   animation: tile-leave 0.25s ease both;
+  pointer-events: none;
+}
+
+.tile--fadeout {
+  animation: tile-fadeout 5s ease both;
   pointer-events: none;
 }
 
@@ -100,9 +113,7 @@
 
 .tile--complete,
 .tile--group.tile--complete {
-  --background-chroma-light: 0;
-  --background-chroma-dark: 0;
-  --color-chroma: 0;
+  --group-hue: var(--default-hue);
   box-shadow: none;
 }
 
@@ -111,6 +122,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.tile__name {
+  font-weight: 700;
 }
 
 .tile__sep {

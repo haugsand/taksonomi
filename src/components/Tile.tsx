@@ -22,6 +22,8 @@ type Props = {
   enterDelay?: number;
   /** When set, the tile animates out with this delay (ms) — used on new game. */
   leaveDelay?: number;
+  /** When true, the tile fades out slowly (category completion). */
+  isFadingOut?: boolean;
   onClick: () => void;
   onDragStart: (e: DragEvent<HTMLButtonElement>) => void;
   onDragEnd: () => void;
@@ -44,6 +46,7 @@ export function Tile(props: Props) {
     disabled,
     enterDelay,
     leaveDelay,
+    isFadingOut,
   } = props;
 
   const isGroup = tile.words.length > 1;
@@ -57,7 +60,8 @@ export function Tile(props: Props) {
   if (isMerged) classes.push("tile--merged");
   if (isDragging) classes.push("tile--dragging");
   if (isShaking) classes.push("tile--shake");
-  if (leaveDelay !== undefined) classes.push("tile--leave");
+  if (isFadingOut) classes.push("tile--fadeout");
+  else if (leaveDelay !== undefined) classes.push("tile--leave");
   else if (enterDelay !== undefined) classes.push("tile--enter");
 
   const style: CSSProperties = {};

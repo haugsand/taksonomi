@@ -9,4 +9,6 @@ export type TileData = {
   categoryName: string;
   hue?: number;
   row?: number;
+  /** Hidden from the board after its category was completed; still counts as solved. */
+  hidden?: boolean;
 };

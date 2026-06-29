@@ -62,9 +62,7 @@ export function Header({ groupCount, wordsPerGroup, theme, onThemeChange, onNewG
                     onNewGame(s);
                   }}
                 >
-                  <span className="header__menu-label">
-                    {s.groups} × {s.wordsPerGroup}
-                  </span>
+                  {s.groups} × {s.wordsPerGroup}
                 </button>
               ))}
             </div>
