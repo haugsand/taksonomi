@@ -1,9 +1,7 @@
 import { useState } from "preact/hooks";
+import { THEME_KEY } from "@/lib/constants";
 
 export type Theme = "dark" | "light";
-
-/** Must match the key used by the pre-paint script in index.html. */
-const THEME_KEY = "taksonomi:theme:v1";
 
 /** Resolves the effective theme from the color-scheme set on <html> (applied by
  *  the pre-paint script when an override is saved), falling back to the OS

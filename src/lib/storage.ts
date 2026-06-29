@@ -1,7 +1,5 @@
 import type { Category, TileData } from "./types";
-
-const STATE_KEY = "taksonomi:state:v3";
-const SIZE_KEY = "taksonomi:size:v1";
+import { SIZE_KEY, STATE_KEY } from "./constants";
 
 export type Size = { groups: number; wordsPerGroup: number };
 export type GameState = Size & { activeCategories: Category[]; tiles: TileData[] };

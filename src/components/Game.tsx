@@ -9,29 +9,24 @@ import { useTheme } from "@/hooks/useTheme";
 import { usePersistentSize } from "@/hooks/usePersistentSize";
 import { useGameSource } from "@/hooks/useGameSource";
 import { useRowCount } from "@/hooks/useRowCount";
+import {
+  ENTER_WINDOW_MS,
+  ENTER_MAX_STEP_MS,
+  ENTER_ANIM_MS,
+  LEAVE_WINDOW_MS,
+  LEAVE_MAX_STEP_MS,
+  LEAVE_ANIM_MS,
+  PREFETCH_REFILL_MS,
+  TILE_FADEOUT_MS,
+} from "@/lib/constants";
+import type { GameSize } from "@/lib/sizes";
 import { Header } from "./Header";
 import { TileGrid } from "./TileGrid";
 import { CompletedBoard } from "./CompletedBoard";
 import { CompletionModal } from "./CompletionModal";
+import { StartModal } from "./StartModal";
 import { ProgressBar } from "./ProgressBar";
 import "./Game.css";
-
-/** Total time window (ms) over which all tiles stagger in on a new game. */
-const ENTER_WINDOW_MS = 700;
-/** Largest delay (ms) added between consecutive tile entrances. */
-const ENTER_MAX_STEP_MS = 22;
-/** Duration (ms) of a single tile's enter animation (matches the CSS). */
-const ENTER_ANIM_MS = 400;
-/** Time window (ms) over which the previous game's tiles stagger out. */
-const LEAVE_WINDOW_MS = 350;
-/** Largest delay (ms) added between consecutive tile exits. */
-const LEAVE_MAX_STEP_MS = 16;
-/** Duration (ms) of a single tile's leave animation (matches the CSS). */
-const LEAVE_ANIM_MS = 250;
-/** Delay (ms) after a new game before refilling the prefetch cache. */
-const PREFETCH_REFILL_MS = 800;
-/** Duration (ms) of the tile fade-out for completed categories (matches tile--fadeout in Tile.css). */
-const TILE_FADEOUT_MS = 5000;
 
 export function Game() {
   const [size, setSize] = usePersistentSize();
@@ -52,10 +47,15 @@ export function Game() {
   const [endBoardVisible, setEndBoardVisible] = useState(false);
   const [finalModal, setFinalModal] = useState(false);
   const [fadingOutId, setFadingOutId] = useState<string | null>(null);
+  const [showStart, setShowStart] = useState(false);
 
   // Always-current tiles, so reset() can read them without being in its deps.
   const tilesRef = useRef<TileData[]>([]);
   tilesRef.current = tiles;
+
+  // True once the player has started or restored a game. While false, an absent
+  // game shows the start menu instead of auto-starting one.
+  const startedRef = useRef(false);
 
   const catByName = useMemo(
     () => new Map(activeCategories.map((c) => [c.name, c])),
@@ -120,15 +120,36 @@ export function Game() {
     }
   }
 
-  // Restore a saved game of the current size, otherwise start a fresh one.
+  // Starts a game at the given size (used by the start menu, the header and the
+  // completion modal). Switching size lets the size effect below start it.
+  function startGame(s: GameSize) {
+    clearGameState();
+    startedRef.current = true;
+    setShowStart(false);
+    if (s.groups === groupCount && s.wordsPerGroup === wordsPerGroup) {
+      reset();
+    } else {
+      setSize({ groups: s.groups, wordsPerGroup: s.wordsPerGroup });
+    }
+  }
+
+  // On load, restore a saved game of the current size; with none, show the start
+  // menu rather than auto-starting. Once a game is under way, switching size
+  // starts a fresh game directly.
   useEffect(() => {
     const saved = loadGameState(size);
     if (saved) {
       setActiveCategories(saved.activeCategories);
       setTiles(saved.tiles);
+      startedRef.current = true;
+      setShowStart(false);
       return;
     }
-    reset();
+    if (startedRef.current) {
+      reset();
+    } else {
+      setShowStart(true);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupCount, wordsPerGroup]);
 
@@ -210,18 +231,12 @@ export function Game() {
       <ProgressBar tileCount={tiles.length} groupCount={groupCount} wordsPerGroup={wordsPerGroup} />
       <Header
         groupCount={groupCount}
-        wordsPerGroup={wordsPerGroup}
+        completedCount={completedCount}
         theme={theme}
         onThemeChange={setTheme}
-        onNewGame={(s) => {
-          clearGameState();
-          if (s.groups === groupCount && s.wordsPerGroup === wordsPerGroup) {
-            reset();
-          } else {
-            setSize({ groups: s.groups, wordsPerGroup: s.wordsPerGroup });
-          }
-        }}
+        onNewGame={startGame}
       />
+      {showStart && <StartModal onStart={startGame} />}
       {finalModal && (
         <CompletionModal
           onShowAll={() => {
@@ -230,12 +245,7 @@ export function Game() {
           }}
           onNewGame={(s) => {
             setFinalModal(false);
-            clearGameState();
-            if (s.groups === groupCount && s.wordsPerGroup === wordsPerGroup) {
-              reset();
-            } else {
-              setSize({ groups: s.groups, wordsPerGroup: s.wordsPerGroup });
-            }
+            startGame(s);
           }}
         />
       )}

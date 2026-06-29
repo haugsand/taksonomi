@@ -6,13 +6,13 @@ type Theme = "dark" | "light";
 
 type Props = {
   groupCount: number;
-  wordsPerGroup: number;
+  completedCount: number;
   theme: Theme;
   onThemeChange: (theme: Theme) => void;
   onNewGame: (size: GameSize) => void;
 };
 
-export function Header({ groupCount, wordsPerGroup, theme, onThemeChange, onNewGame }: Props) {
+export function Header({ groupCount, completedCount, theme, onThemeChange, onNewGame }: Props) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -27,9 +27,9 @@ export function Header({ groupCount, wordsPerGroup, theme, onThemeChange, onNewG
 
   return (
     <header className="header">
-      <h1 style={{ margin: 0, fontSize: "1rem" }}>
-        Taksonomi ({groupCount} x {wordsPerGroup})
-      </h1>
+      <p className="header__progress">
+        {completedCount} av {groupCount} kategorier fullført
+      </p>
       <div className="header__controls">
         <button
           type="button"
@@ -37,7 +37,7 @@ export function Header({ groupCount, wordsPerGroup, theme, onThemeChange, onNewG
           onClick={() => onThemeChange(theme === "dark" ? "light" : "dark")}
           aria-label={theme === "dark" ? "Bytt til lyst tema" : "Bytt til mørkt tema"}
         >
-          {theme === "dark" ? "☀️ Lys" : "🌙 Mørk"}
+          {theme === "dark" ? "☀️" : "🌙"}
         </button>
         <div className="header__dropdown" ref={wrapRef}>
           <button
