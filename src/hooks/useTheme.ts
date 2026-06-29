@@ -1,19 +1,34 @@
-import { useEffect, useState } from "preact/hooks";
-import { loadTheme, saveTheme, type Theme } from "@/lib/storage";
+import { useState } from "preact/hooks";
 
-/** Theme state synced to <html data-theme> and localStorage. */
+export type Theme = "dark" | "light";
+
+/** Must match the key used by the pre-paint script in index.html. */
+const THEME_KEY = "taksonomi:theme:v1";
+
+/** Resolves the effective theme from the color-scheme set on <html> (applied by
+ *  the pre-paint script when an override is saved), falling back to the OS
+ *  preference while no explicit override is in place. */
+function currentTheme(): Theme {
+  const forced = document.documentElement.style.colorScheme;
+  if (forced === "light" || forced === "dark") return forced;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+/** Theme toggle backed by the `color-scheme` of <html>. CSS light-dark() reads
+ *  that scheme directly. The chosen theme is persisted so it survives a reload;
+ *  with nothing saved, the meta tag's "light dark" follows the OS. */
 export function useTheme(): [Theme, (theme: Theme) => void] {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setThemeState] = useState<Theme>(currentTheme);
 
-  useEffect(() => {
-    const saved = loadTheme();
-    if (saved) setTheme(saved);
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    saveTheme(theme);
-  }, [theme]);
+  function setTheme(next: Theme) {
+    document.documentElement.style.colorScheme = next;
+    try {
+      localStorage.setItem(THEME_KEY, next);
+    } catch {
+      // ignore
+    }
+    setThemeState(next);
+  }
 
   return [theme, setTheme];
 }

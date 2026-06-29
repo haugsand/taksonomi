@@ -4,10 +4,8 @@ import {
   clearGameState,
   loadGameState,
   loadSize,
-  loadTheme,
   saveGameState,
   saveSize,
-  saveTheme,
   type GameState,
 } from "./storage";
 
@@ -31,22 +29,6 @@ describe("size", () => {
   it("falls back to the default for the wrong shape", () => {
     localStorage.setItem("taksonomi:size:v1", JSON.stringify({ groups: "a" }));
     expect(loadSize()).toEqual(DEFAULT_SIZE);
-  });
-});
-
-describe("theme", () => {
-  it("returns null when nothing is stored", () => {
-    expect(loadTheme()).toBeNull();
-  });
-
-  it("round-trips a saved theme", () => {
-    saveTheme("light");
-    expect(loadTheme()).toBe("light");
-  });
-
-  it("returns null for an invalid value", () => {
-    localStorage.setItem("taksonomi:theme:v1", "purple");
-    expect(loadTheme()).toBeNull();
   });
 });
 

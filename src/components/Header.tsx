@@ -27,7 +27,18 @@ export function Header({ groupCount, wordsPerGroup, theme, onThemeChange, onNewG
 
   return (
     <header className="header">
+      <h1 style={{ margin: 0, fontSize: "1rem" }}>
+        Taksonomi ({groupCount} x {wordsPerGroup})
+      </h1>
       <div className="header__controls">
+        <button
+          type="button"
+          className="header__theme-toggle"
+          onClick={() => onThemeChange(theme === "dark" ? "light" : "dark")}
+          aria-label={theme === "dark" ? "Bytt til lyst tema" : "Bytt til mørkt tema"}
+        >
+          {theme === "dark" ? "☀️ Lys" : "🌙 Mørk"}
+        </button>
         <div className="header__dropdown" ref={wrapRef}>
           <button
             type="button"
@@ -51,8 +62,7 @@ export function Header({ groupCount, wordsPerGroup, theme, onThemeChange, onNewG
                     onNewGame(s);
                   }}
                 >
-                  <span className="header__menu-label">{s.label}</span>
-                  <span className="header__menu-desc">
+                  <span className="header__menu-label">
                     {s.groups} × {s.wordsPerGroup}
                   </span>
                 </button>
@@ -60,27 +70,6 @@ export function Header({ groupCount, wordsPerGroup, theme, onThemeChange, onNewG
             </div>
           )}
         </div>
-        <div className="header__theme" role="group" aria-label="Tema">
-          <button
-            type="button"
-            className={`header__theme-btn${theme === "dark" ? " header__theme-btn--active" : ""}`}
-            onClick={() => onThemeChange("dark")}
-            aria-pressed={theme === "dark"}
-          >
-            Mørk
-          </button>
-          <button
-            type="button"
-            className={`header__theme-btn${theme === "light" ? " header__theme-btn--active" : ""}`}
-            onClick={() => onThemeChange("light")}
-            aria-pressed={theme === "light"}
-          >
-            Lys
-          </button>
-        </div>
-        <p className="header__subtitle">
-          Kombiner ordene for å lage {groupCount} kategorier, med {wordsPerGroup} ord i hver.
-        </p>
       </div>
     </header>
   );

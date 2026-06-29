@@ -1,16 +1,27 @@
 .tile {
+  --background-luminance-light: 0.92;
+  --background-luminance-dark: 0.3;
+  --background-chroma-light: 0.02;
+  --background-chroma-dark: 0.04;
+  --color-luminance-light: 0.2;
+  --color-luminance-dark: 0.96;
+  --color-chroma: 0.03;
   display: inline-flex;
   align-items: center;
   padding: 0.375rem 0.625rem;
   border-radius: 999px;
   font-size: 0.8125rem;
   font-weight: 400;
-  background-color: var(--surface);
-  color: var(--fg);
+  background-color: light-dark(
+    oklch(var(--background-luminance-light) var(--background-chroma-light) var(--default-hue)),
+    oklch(var(--background-luminance-dark) var(--background-chroma-dark) var(--default-hue))
+  );
+  color: light-dark(
+    oklch(var(--color-luminance-light) var(--color-chroma) var(--default-hue)),
+    oklch(var(--color-luminance-dark) var(--color-chroma) var(--default-hue))
+  );
   transition:
     transform 0.15s ease,
-    background-color 0.15s ease,
-    box-shadow 0.15s ease,
     opacity 0.15s ease;
   user-select: none;
 }
@@ -64,18 +75,23 @@
 }
 
 .tile:hover {
-  background-color: var(--surface-hover);
+  --background-luminance-light: 0.88;
+  --background-luminance-dark: 0.25;
 }
 
 .tile--group {
+  --background-chroma-light: 0.09;
+  --background-chroma-dark: 0.18;
   max-width: 18rem;
   min-width: 0;
-  background-color: oklch(var(--group-bg-l) var(--group-bg-c) var(--group-hue, 0));
-  color: oklch(var(--group-fg-l) var(--group-fg-c) var(--group-hue, 0));
-}
-
-.tile--group:hover {
-  background-color: oklch(calc(var(--group-bg-l) - 0.06) var(--group-bg-c) var(--group-hue, 0));
+  background-color: light-dark(
+    oklch(var(--background-luminance-light) var(--background-chroma-light) var(--group-hue, 0)),
+    oklch(var(--background-luminance-dark) var(--background-chroma-dark) var(--group-hue, 0))
+  );
+  color: light-dark(
+    oklch(var(--color-luminance-light) var(--color-chroma) var(--group-hue, 0)),
+    oklch(var(--color-luminance-dark) var(--color-chroma) var(--group-hue, 0))
+  );
 }
 
 .tile--group.tile--complete {
@@ -84,14 +100,10 @@
 
 .tile--complete,
 .tile--group.tile--complete {
-  background-color: oklch(0.42 0.15 150);
-  color: #ffffff;
+  --background-chroma-light: 0;
+  --background-chroma-dark: 0;
+  --color-chroma: 0;
   box-shadow: none;
-}
-
-.tile--complete:hover,
-.tile--group.tile--complete:hover {
-  background-color: oklch(0.48 0.16 150);
 }
 
 .tile__words {
@@ -99,21 +111,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-[data-theme="light"] .tile--complete,
-[data-theme="light"] .tile--group.tile--complete {
-  background-color: oklch(0.42 0.15 150);
-  color: #ffffff;
-}
-
-[data-theme="light"] .tile--complete:hover,
-[data-theme="light"] .tile--group.tile--complete:hover {
-  background-color: oklch(0.48 0.16 150);
-}
-
-.tile__name {
-  font-weight: 700;
 }
 
 .tile__sep {

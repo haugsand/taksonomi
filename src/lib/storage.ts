@@ -1,10 +1,8 @@
 import type { Category, TileData } from "./types";
 
-const THEME_KEY = "taksonomi:theme:v1";
 const STATE_KEY = "taksonomi:state:v3";
 const SIZE_KEY = "taksonomi:size:v1";
 
-export type Theme = "dark" | "light";
 export type Size = { groups: number; wordsPerGroup: number };
 export type GameState = Size & { activeCategories: Category[]; tiles: TileData[] };
 
@@ -29,24 +27,6 @@ export function loadSize(): Size {
 export function saveSize(size: Size): void {
   try {
     localStorage.setItem(SIZE_KEY, JSON.stringify(size));
-  } catch {
-    // ignore
-  }
-}
-
-export function loadTheme(): Theme | null {
-  try {
-    const saved = localStorage.getItem(THEME_KEY);
-    if (saved === "light" || saved === "dark") return saved;
-  } catch {
-    // ignore
-  }
-  return null;
-}
-
-export function saveTheme(theme: Theme): void {
-  try {
-    localStorage.setItem(THEME_KEY, theme);
   } catch {
     // ignore
   }
