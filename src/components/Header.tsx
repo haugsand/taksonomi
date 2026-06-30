@@ -49,42 +49,42 @@ export function Header({
           {completedCount} av {groupCount} kategorier fullført
         </p>
         <div className="header__controls">
-        <button
-          type="button"
-          className="header__theme-toggle"
-          onClick={() => onThemeChange(theme === "dark" ? "light" : "dark")}
-          aria-label={theme === "dark" ? "Bytt til lyst tema" : "Bytt til mørkt tema"}
-        >
-          {theme === "dark" ? "☀️" : "🌙"}
-        </button>
-        <div className="header__dropdown" ref={wrapRef}>
           <button
             type="button"
-            className="header__button"
-            onClick={() => setOpen((v) => !v)}
-            aria-haspopup="menu"
-            aria-expanded={open}
+            className="header__theme-toggle"
+            onClick={() => onThemeChange(theme === "dark" ? "light" : "dark")}
+            aria-label={theme === "dark" ? "Bytt til lyst tema" : "Bytt til mørkt tema"}
           >
-            Nytt spill ▾
+            {theme === "dark" ? "☀️" : "🌙"}
           </button>
-          {open && (
-            <div className="header__menu" role="menu">
-              {GAME_SIZES.map((s) => (
-                <button
-                  key={s.label}
-                  type="button"
-                  role="menuitem"
-                  className="header__menu-item"
-                  onClick={() => {
-                    setOpen(false);
-                    onNewGame(s);
-                  }}
-                >
-                  {s.groups} × {s.wordsPerGroup}
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="header__dropdown" ref={wrapRef}>
+            <button
+              type="button"
+              className="header__button"
+              onClick={() => setOpen((v) => !v)}
+              aria-haspopup="menu"
+              aria-expanded={open}
+            >
+              Nytt spill ▾
+            </button>
+            {open && (
+              <div className="header__menu" role="menu">
+                {GAME_SIZES.map((s) => (
+                  <button
+                    key={s.label}
+                    type="button"
+                    role="menuitem"
+                    className="header__menu-item"
+                    onClick={() => {
+                      setOpen(false);
+                      onNewGame(s);
+                    }}
+                  >
+                    {s.groups} × {s.wordsPerGroup}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
