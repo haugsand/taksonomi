@@ -263,11 +263,19 @@ export function Game() {
 
   const { boardRef, rowCount } = useRowCount([activeCategories, done]);
 
-  // Assign tiles to rows once we know how many rows fit and any are unplaced,
-  // spreading the words evenly across every row.
+  // Assign tiles to rows once we know how many rows fit, and re-assign
+  // whenever that count changes (e.g. orientation/viewport resize, where the
+  // old layout may no longer fit). Gameplay changes alone (merging,
+  // completing) must NOT reflow tiles — see tiles-never-move-rows — so this
+  // only re-runs assignRows when rowCount itself moved since the last time we
+  // used it, not on every tiles update.
+  const assignedRowCountRef = useRef<number | null>(null);
   useEffect(() => {
     if (rowCount <= 0 || tiles.length === 0) return;
-    if (tiles.every((t) => typeof t.row === "number")) return;
+    const needsInitialAssign = tiles.some((t) => typeof t.row !== "number");
+    const rowCountChanged = assignedRowCountRef.current !== rowCount;
+    if (!needsInitialAssign && !rowCountChanged) return;
+    assignedRowCountRef.current = rowCount;
     setTiles(assignRows(tiles, rowCount));
   }, [tiles, rowCount]);
 

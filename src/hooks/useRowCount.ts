@@ -22,9 +22,15 @@ export function useRowCount(deps: unknown[]): {
     recompute();
     window.addEventListener("resize", recompute);
     window.visualViewport?.addEventListener("resize", recompute);
+    // Belt-and-braces for orientation changes: some mobile browsers report
+    // stale innerHeight/visualViewport dimensions for a moment right after
+    // rotation, so re-measure again shortly after the change settles.
+    const onOrientationChange = () => setTimeout(recompute, 100);
+    window.addEventListener("orientationchange", onOrientationChange);
     return () => {
       window.removeEventListener("resize", recompute);
       window.visualViewport?.removeEventListener("resize", recompute);
+      window.removeEventListener("orientationchange", onOrientationChange);
     };
   }, [recompute]);
 
