@@ -6,18 +6,18 @@ import { Tile, type Rect } from "./Tile";
 
 type Props = {
   rows: TileData[][];
-  /** The tile currently detached (pinned absolute) once it's been measured —
-   *  rendered outside any .board__row so that row can collapse instead of
-   *  claiming an empty gap slot. */
-  completingTile: TileData | null;
+  /** Tiles currently detached (pinned absolute) once they've been measured —
+   *  rendered outside any .board__row so those rows can collapse instead of
+   *  claiming an empty gap slot. More than one at a time when categories
+   *  complete close together. */
+  completingTiles: TileData[];
   catByName: Map<string, Category>;
   boardRef: RefObject<HTMLDivElement>;
   selectedId: string | null;
   shakeIds: string[];
-  justMergedId: string | null;
-  fadingOutId: string | null;
-  completingId: string | null;
-  completingRect: Rect | null;
+  justMergedIds: Set<string>;
+  fadingOutIds: Set<string>;
+  completingRects: Map<string, Rect>;
   expandedIds: Set<string>;
   enterDelays: Map<string, number> | null;
   leavingDelays: Map<string, number> | null;
@@ -31,15 +31,14 @@ type Props = {
 export function TileGrid(props: Props) {
   const {
     rows,
-    completingTile,
+    completingTiles,
     catByName,
     boardRef,
     selectedId,
     shakeIds,
-    justMergedId,
-    fadingOutId,
-    completingId,
-    completingRect,
+    justMergedIds,
+    fadingOutIds,
+    completingRects,
     expandedIds,
     enterDelays,
     leavingDelays,
@@ -60,13 +59,13 @@ export function TileGrid(props: Props) {
         tile={t}
         enterDelay={enterDelays?.get(t.id)}
         leaveDelay={leavingDelays?.get(t.id)}
-        isFadingOut={fadingOutId === t.id}
-        completingRect={completingId === t.id ? completingRect : null}
+        isFadingOut={fadingOutIds.has(t.id)}
+        completingRect={completingRects.get(t.id) ?? null}
         categoryName={cat.name}
         categorySize={cat.words.length}
         isSelected={selectedId === t.id}
         isShaking={shakeIds.includes(t.id)}
-        isMerged={justMergedId === t.id}
+        isMerged={justMergedIds.has(t.id)}
         isExpanded={expandedIds.has(t.id)}
         disabled={done || loading}
         onClick={() => onTileClick(t.id)}
@@ -82,7 +81,7 @@ export function TileGrid(props: Props) {
           {row.map(renderTile)}
         </div>
       ))}
-      {completingTile && renderTile(completingTile)}
+      {completingTiles.map(renderTile)}
     </Board>
   );
 }
