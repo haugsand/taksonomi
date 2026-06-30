@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 import type { JSX } from "preact";
 import type { Category, TileData } from "@/lib/types";
-import type { Rect } from "./Tile";
 import { shuffle, sleep } from "@/lib/util";
 import { staggerDelays } from "@/lib/animation";
 import { buildInitialTiles, combineTiles, countCompleted, isTileComplete } from "@/lib/tiles";
@@ -11,6 +10,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { usePersistentSize } from "@/hooks/usePersistentSize";
 import { useGameSource } from "@/hooks/useGameSource";
 import { useRowCount } from "@/hooks/useRowCount";
+import { useTileCompletion } from "@/hooks/useTileCompletion";
 import {
   ENTER_WINDOW_MS,
   ENTER_MAX_STEP_MS,
@@ -18,10 +18,8 @@ import {
   LEAVE_WINDOW_MS,
   LEAVE_MAX_STEP_MS,
   LEAVE_ANIM_MS,
-  POP_ANIM_MS,
   SHAKE_ANIM_MS,
   PREFETCH_REFILL_MS,
-  TILE_FADEOUT_MS,
   animationVars,
 } from "@/lib/constants";
 import type { GameSize } from "@/lib/sizes";
@@ -31,18 +29,6 @@ import { CompletedBoard } from "./CompletedBoard";
 import { CompletionModal } from "./CompletionModal";
 import { StartModal } from "./StartModal";
 import "./Game.css";
-
-const setWith = (set: Set<string>, id: string): Set<string> => new Set(set).add(id);
-const setWithout = (set: Set<string>, id: string): Set<string> => {
-  const next = new Set(set);
-  next.delete(id);
-  return next;
-};
-const mapWithout = <V,>(map: Map<string, V>, id: string): Map<string, V> => {
-  const next = new Map(map);
-  next.delete(id);
-  return next;
-};
 
 export function Game() {
   const [size, setSize] = usePersistentSize();
@@ -56,21 +42,12 @@ export function Game() {
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [shakeIds, setShakeIds] = useState<string[]>([]);
-  // Sets/maps (not single values) because multiple categories can complete
-  // within the same ~5.5s animation window — each tile then needs its own
-  // independent pop/pin/fade state instead of overwriting a shared one.
-  const [justMergedIds, setJustMergedIds] = useState<Set<string>>(new Set());
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [enterDelays, setEnterDelays] = useState<Map<string, number> | null>(null);
   const [leavingDelays, setLeavingDelays] = useState<Map<string, number> | null>(null);
   const [endBoardVisible, setEndBoardVisible] = useState(false);
   const [finalModal, setFinalModal] = useState(false);
-  const [fadingOutIds, setFadingOutIds] = useState<Set<string>>(new Set());
   const [showStart, setShowStart] = useState(false);
-  // Tiles currently detached from the flex flow after their category
-  // completed (pop -> pinned in place -> scales up while it fades out).
-  const [completingIds, setCompletingIds] = useState<Set<string>>(new Set());
-  const [completingRects, setCompletingRects] = useState<Map<string, Rect>>(new Map());
   // Height of the fixed header, reserved as padding-top on .game so the board
   // still starts below it. Tracked live so wrapping / orientation changes keep
   // the offset (and thus the row-count measurement) correct.
@@ -83,6 +60,12 @@ export function Game() {
   const gameRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
 
+  // Owns the post-merge pop / pin / fade-out animation lifecycle.
+  const completion = useTileCompletion(gameRef, {
+    onHide: (id) => setTiles((ts) => ts.map((t) => (t.id === id ? { ...t, hidden: true } : t))),
+    onFinal: () => setFinalModal(true),
+  });
+
   // Keep headerHeight in sync with the fixed header's rendered height.
   useLayoutEffect(() => {
     const el = headerRef.current;
@@ -93,40 +76,6 @@ export function Game() {
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
-
-  // Measures any newly-completing tiles' current (still in-flow) box relative
-  // to .game, then pins each there via position: absolute — same spot, so the
-  // switch out of the flex flow is invisible. Runs before paint. Several
-  // tiles can be pending measurement at once if categories complete close
-  // together; each only needs measuring once.
-  useLayoutEffect(() => {
-    const gameEl = gameRef.current;
-    if (!gameEl || completingIds.size === 0) return;
-    setCompletingRects((prevRects) => {
-      const pending = [...completingIds].filter((id) => !prevRects.has(id));
-      if (pending.length === 0) return prevRects;
-      const gameBox = gameEl.getBoundingClientRect();
-      const elementsById = new Map(
-        Array.from(gameEl.querySelectorAll<HTMLElement>("[data-tile-id]")).map((el) => [
-          el.dataset.tileId,
-          el,
-        ]),
-      );
-      const next = new Map(prevRects);
-      for (const id of pending) {
-        const tileEl = elementsById.get(id);
-        if (!tileEl) continue;
-        const tileBox = tileEl.getBoundingClientRect();
-        next.set(id, {
-          top: tileBox.top - gameBox.top,
-          left: tileBox.left - gameBox.left,
-          width: tileBox.width,
-          height: tileBox.height,
-        });
-      }
-      return next;
-    });
-  }, [completingIds]);
 
   // True once the player has started or restored a game. While false, an absent
   // game shows the start menu instead of auto-starting one.
@@ -143,9 +92,7 @@ export function Game() {
     setEnterDelays(null);
     setSelectedId(null);
     setFinalModal(false);
-    setFadingOutIds(new Set());
-    setCompletingIds(new Set());
-    setCompletingRects(new Map());
+    completion.reset();
     setEndBoardVisible(false);
 
     // Start fetching right away — often instant from the prefetch cache — so the
@@ -263,29 +210,12 @@ export function Game() {
     } else if (outcome.kind === "merged") {
       setTiles(outcome.tiles);
       const mergedId = outcome.mergedId;
-      setJustMergedIds((s) => setWith(s, mergedId));
       const merged = outcome.tiles.find((t) => t.id === mergedId);
       if (merged && isTileComplete(merged, catByName)) {
         const isFinal = countCompleted(outcome.tiles, catByName) === activeCategories.length;
-        // Immediately pin the tile out of the flex flow at its current spot
-        // (measured in the layout effect above), so growing it doesn't disturb
-        // the rest of the board. Each completing tile is tracked independently,
-        // so a second category completing mid-animation gets its own sequence.
-        setCompletingIds((s) => setWith(s, mergedId));
-        // After the pop animation, fade it out in place while it scales up.
-        setTimeout(() => {
-          setJustMergedIds((s) => setWithout(s, mergedId));
-          setFadingOutIds((s) => setWith(s, mergedId));
-          setTimeout(() => {
-            setFadingOutIds((s) => setWithout(s, mergedId));
-            setCompletingIds((s) => setWithout(s, mergedId));
-            setCompletingRects((m) => mapWithout(m, mergedId));
-            setTiles((ts) => ts.map((t) => (t.id === mergedId ? { ...t, hidden: true } : t)));
-            if (isFinal) setFinalModal(true);
-          }, TILE_FADEOUT_MS);
-        }, POP_ANIM_MS);
+        completion.completeCategory(mergedId, isFinal);
       } else {
-        setTimeout(() => setJustMergedIds((s) => setWithout(s, mergedId)), POP_ANIM_MS);
+        completion.popMerged(mergedId);
       }
     }
   }
@@ -328,6 +258,7 @@ export function Game() {
   // slot in .board__tiles' flex layout until the tile finished fading. Until
   // measured (no rect yet), it stays put so the layout effect above can read
   // its true in-flow position.
+  const { completingRects } = completion;
   const visibleTiles = useMemo(
     () => tiles.filter((t) => !t.hidden && !completingRects.has(t.id)),
     [tiles, completingRects],
@@ -384,8 +315,8 @@ export function Game() {
           catByName={catByName}
           selectedId={selectedId}
           shakeIds={shakeIds}
-          justMergedIds={justMergedIds}
-          fadingOutIds={fadingOutIds}
+          justMergedIds={completion.justMergedIds}
+          fadingOutIds={completion.fadingOutIds}
           completingRects={completingRects}
           completingTiles={completingTiles}
           expandedIds={expandedIds}

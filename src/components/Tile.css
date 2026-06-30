@@ -83,7 +83,10 @@
 
 @media (prefers-reduced-motion: reduce) {
   .tile--enter,
-  .tile--leave {
+  .tile--leave,
+  .tile--fadeout,
+  .tile--merged,
+  .tile--shake {
     animation-duration: 0.01ms;
     animation-delay: 0ms !important;
   }
