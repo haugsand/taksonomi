@@ -46,7 +46,7 @@
 }
 
 .tile--enter {
-  animation: tile-enter 0.3s ease both;
+  animation: tile-enter var(--tile-enter-duration) ease both;
 }
 
 /* Exit animation: previous game's tiles pop out before the new game arrives. */
@@ -70,12 +70,12 @@
 }
 
 .tile--leave {
-  animation: tile-leave 0.25s ease both;
+  animation: tile-leave var(--tile-leave-duration) ease both;
   pointer-events: none;
 }
 
 .tile--fadeout {
-  animation: tile-fadeout 5s ease both;
+  animation: tile-fadeout var(--tile-fadeout-duration) ease both;
   pointer-events: none;
 }
 
@@ -141,7 +141,7 @@
 }
 
 .tile--merged {
-  animation: tile-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: tile-pop var(--tile-pop-duration) cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 2;
 }
 
@@ -150,7 +150,7 @@
 }
 
 .tile--shake {
-  animation: tile-shake 0.4s;
+  animation: tile-shake var(--tile-shake-duration);
 }
 
 .tile__progress {

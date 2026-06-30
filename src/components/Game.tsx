@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+import type { JSX } from "preact";
 import type { Category, TileData } from "@/lib/types";
 import { shuffle, sleep } from "@/lib/util";
 import { staggerDelays } from "@/lib/animation";
@@ -16,8 +17,11 @@ import {
   LEAVE_WINDOW_MS,
   LEAVE_MAX_STEP_MS,
   LEAVE_ANIM_MS,
+  POP_ANIM_MS,
+  SHAKE_ANIM_MS,
   PREFETCH_REFILL_MS,
   TILE_FADEOUT_MS,
+  animationVars,
 } from "@/lib/constants";
 import type { GameSize } from "@/lib/sizes";
 import { Header } from "./Header";
@@ -174,7 +178,7 @@ export function Game() {
     const outcome = combineTiles(tiles, aId, bId, catByName);
     if (outcome.kind === "mismatch") {
       setShakeIds(outcome.ids);
-      setTimeout(() => setShakeIds([]), 400);
+      setTimeout(() => setShakeIds([]), SHAKE_ANIM_MS);
     } else if (outcome.kind === "merged") {
       setTiles(outcome.tiles);
       setJustMergedId(outcome.mergedId);
@@ -182,7 +186,7 @@ export function Game() {
       if (merged && isTileComplete(merged, catByName)) {
         const isFinal = countCompleted(outcome.tiles, catByName) === activeCategories.length;
         const mergedId = merged.id;
-        // After the pop animation, start the 5-second fade immediately.
+        // After the pop animation, start the fade immediately.
         setTimeout(() => {
           setJustMergedId(null);
           setFadingOutId(mergedId);
@@ -191,9 +195,9 @@ export function Game() {
             setTiles((ts) => ts.map((t) => (t.id === mergedId ? { ...t, hidden: true } : t)));
             if (isFinal) setFinalModal(true);
           }, TILE_FADEOUT_MS);
-        }, 600);
+        }, POP_ANIM_MS);
       } else {
-        setTimeout(() => setJustMergedId(null), 600);
+        setTimeout(() => setJustMergedId(null), POP_ANIM_MS);
       }
     }
   }
@@ -227,7 +231,7 @@ export function Game() {
   const rows = useMemo(() => groupIntoRows(visibleTiles), [visibleTiles]);
 
   return (
-    <div className="game">
+    <div className="game" style={animationVars as JSX.CSSProperties}>
       <ProgressBar tileCount={tiles.length} groupCount={groupCount} wordsPerGroup={wordsPerGroup} />
       <Header
         groupCount={groupCount}
