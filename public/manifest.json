@@ -4,7 +4,7 @@
   "description": "Et ordspill hvor du kombinerer ord som hører til samme kategori.",
   "start_url": "/",
   "scope": "/",
-  "display": "standalone",
+  "display": "fullscreen",
   "orientation": "any",
   "background_color": "#061008",
   "theme_color": "#061008",
