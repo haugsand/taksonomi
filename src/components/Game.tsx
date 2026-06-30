@@ -30,7 +30,6 @@ import { TileGrid } from "./TileGrid";
 import { CompletedBoard } from "./CompletedBoard";
 import { CompletionModal } from "./CompletionModal";
 import { StartModal } from "./StartModal";
-import { ProgressBar } from "./ProgressBar";
 import "./Game.css";
 
 const setWith = (set: Set<string>, id: string): Set<string> => new Set(set).add(id);
@@ -72,12 +71,28 @@ export function Game() {
   // completed (pop -> pinned in place -> scales up while it fades out).
   const [completingIds, setCompletingIds] = useState<Set<string>>(new Set());
   const [completingRects, setCompletingRects] = useState<Map<string, Rect>>(new Map());
+  // Height of the fixed header, reserved as padding-top on .game so the board
+  // still starts below it. Tracked live so wrapping / orientation changes keep
+  // the offset (and thus the row-count measurement) correct.
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   // Always-current tiles, so reset() can read them without being in its deps.
   const tilesRef = useRef<TileData[]>([]);
   tilesRef.current = tiles;
 
   const gameRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+
+  // Keep headerHeight in sync with the fixed header's rendered height.
+  useLayoutEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const measure = () => setHeaderHeight(el.getBoundingClientRect().height);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // Measures any newly-completing tiles' current (still in-flow) box relative
   // to .game, then pins each there via position: absolute — same spot, so the
@@ -289,7 +304,7 @@ export function Game() {
     }
   }
 
-  const { boardRef, rowCount } = useRowCount([activeCategories, done]);
+  const { boardRef, rowCount } = useRowCount([activeCategories, done, headerHeight]);
 
   // Assign tiles to rows once we know how many rows fit, and re-assign
   // whenever that count changes (e.g. orientation/viewport resize, where the
@@ -324,11 +339,17 @@ export function Game() {
   );
 
   return (
-    <div className="game" ref={gameRef} style={animationVars as JSX.CSSProperties}>
-      <ProgressBar tileCount={tiles.length} groupCount={groupCount} wordsPerGroup={wordsPerGroup} />
+    <div
+      className="game"
+      ref={gameRef}
+      style={{ ...animationVars, "--header-height": `${headerHeight}px` } as JSX.CSSProperties}
+    >
       <Header
+        headerRef={headerRef}
         groupCount={groupCount}
+        wordsPerGroup={wordsPerGroup}
         completedCount={completedCount}
+        tileCount={tiles.length}
         theme={theme}
         onThemeChange={setTheme}
         onNewGame={startGame}

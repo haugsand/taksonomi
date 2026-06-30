@@ -9,6 +9,10 @@
   min-height: 100dvh;
   overflow-x: visible;
   overflow-y: hidden;
+  /* The header is position: fixed (out of flow); reserve its measured height
+     so the board still starts right below it — row placement and the row-count
+     measurement (which reads the board's real top) stay unchanged. */
+  padding-top: var(--header-height, 0px);
 }
 
 .game__status {

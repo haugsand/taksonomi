@@ -1,9 +1,17 @@
 .header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
   background-color: var(--bg);
-  padding: 1rem;
+}
+
+.header__bar {
   display: flex;
   justify-content: space-between;
   gap: 0.5rem;
+  padding: 1rem;
 }
 
 .header__controls {
