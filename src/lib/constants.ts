@@ -25,6 +25,8 @@ export const POP_ANIM_MS = 550;
 export const SHAKE_ANIM_MS = 400;
 /** Duration of the tile fade-out for completed categories. */
 export const TILE_FADEOUT_MS = 5000;
+/** Scale a completed tile grows to while it fades out, in place. */
+export const FADE_SCALE = 3;
 /** Delay after a new game before refilling the prefetch cache. */
 export const PREFETCH_REFILL_MS = 800;
 
@@ -37,6 +39,7 @@ export const animationVars = {
   "--tile-pop-duration": `${POP_ANIM_MS}ms`,
   "--tile-shake-duration": `${SHAKE_ANIM_MS}ms`,
   "--tile-fadeout-duration": `${TILE_FADEOUT_MS}ms`,
+  "--tile-fade-scale": `${FADE_SCALE}`,
 } as const;
 
 // localStorage keys. Bump the version suffix when the stored shape changes.

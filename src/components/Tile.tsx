@@ -7,6 +7,9 @@ export type { TileData };
 type CSSProperties = JSX.CSSProperties;
 type DragEvent<T extends EventTarget> = JSX.TargetedDragEvent<T>;
 
+/** A tile's box, measured relative to the .game root. */
+export type Rect = { top: number; left: number; width: number; height: number };
+
 type Props = {
   tile: TileData;
   categoryName: string;
@@ -24,6 +27,9 @@ type Props = {
   leaveDelay?: number;
   /** When true, the tile fades out slowly (category completion). */
   isFadingOut?: boolean;
+  /** Set once this tile's category completes: pins it at this measured rect,
+   *  out of the normal flex flow, instead of letting it sit in its row. */
+  completingRect?: Rect | null;
   onClick: () => void;
   onDragStart: (e: DragEvent<HTMLButtonElement>) => void;
   onDragEnd: () => void;
@@ -47,6 +53,7 @@ export function Tile(props: Props) {
     enterDelay,
     leaveDelay,
     isFadingOut,
+    completingRect,
   } = props;
 
   const isGroup = tile.words.length > 1;
@@ -60,6 +67,7 @@ export function Tile(props: Props) {
   if (isMerged) classes.push("tile--merged");
   if (isDragging) classes.push("tile--dragging");
   if (isShaking) classes.push("tile--shake");
+  if (completingRect) classes.push("tile--completing");
   if (isFadingOut) classes.push("tile--fadeout");
   else if (leaveDelay !== undefined) classes.push("tile--leave");
   else if (enterDelay !== undefined) classes.push("tile--enter");
@@ -71,6 +79,15 @@ export function Tile(props: Props) {
   const animDelay = leaveDelay ?? enterDelay;
   if (animDelay !== undefined) style.animationDelay = `${animDelay}ms`;
 
+  if (completingRect) {
+    style.position = "absolute";
+    style.top = `${completingRect.top}px`;
+    style.left = `${completingRect.left}px`;
+    style.width = `${completingRect.width}px`;
+    style.height = `${completingRect.height}px`;
+    style.margin = 0;
+  }
+
   const showWords = !isComplete || isExpanded;
 
   return (
@@ -78,6 +95,7 @@ export function Tile(props: Props) {
       type="button"
       className={classes.join(" ")}
       style={style}
+      data-tile-id={tile.id}
       draggable={!disabled && !isComplete}
       onClick={props.onClick}
       onDragStart={props.onDragStart}

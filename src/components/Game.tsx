@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 import type { JSX } from "preact";
 import type { Category, TileData } from "@/lib/types";
+import type { Rect } from "./Tile";
 import { shuffle, sleep } from "@/lib/util";
 import { staggerDelays } from "@/lib/animation";
 import { buildInitialTiles, combineTiles, countCompleted, isTileComplete } from "@/lib/tiles";
@@ -52,10 +53,38 @@ export function Game() {
   const [finalModal, setFinalModal] = useState(false);
   const [fadingOutId, setFadingOutId] = useState<string | null>(null);
   const [showStart, setShowStart] = useState(false);
+  // The tile currently detached from the flex flow after its category
+  // completed (pop -> pinned in place -> scales up while it fades out).
+  const [completingId, setCompletingId] = useState<string | null>(null);
+  const [completingRect, setCompletingRect] = useState<Rect | null>(null);
 
   // Always-current tiles, so reset() can read them without being in its deps.
   const tilesRef = useRef<TileData[]>([]);
   tilesRef.current = tiles;
+
+  const gameRef = useRef<HTMLDivElement>(null);
+
+  // Measures the completing tile's current (still in-flow) box relative to
+  // .game, then pins it there via position: absolute — same spot, so the
+  // switch out of the flex flow is invisible. Runs before paint.
+  useLayoutEffect(() => {
+    if (!completingId) return;
+    const gameEl = gameRef.current;
+    const tileEl = gameEl
+      ? Array.from(gameEl.querySelectorAll<HTMLElement>("[data-tile-id]")).find(
+          (el) => el.dataset.tileId === completingId,
+        )
+      : undefined;
+    if (!gameEl || !tileEl) return;
+    const gameBox = gameEl.getBoundingClientRect();
+    const tileBox = tileEl.getBoundingClientRect();
+    setCompletingRect({
+      top: tileBox.top - gameBox.top,
+      left: tileBox.left - gameBox.left,
+      width: tileBox.width,
+      height: tileBox.height,
+    });
+  }, [completingId]);
 
   // True once the player has started or restored a game. While false, an absent
   // game shows the start menu instead of auto-starting one.
@@ -73,6 +102,8 @@ export function Game() {
     setSelectedId(null);
     setFinalModal(false);
     setFadingOutId(null);
+    setCompletingId(null);
+    setCompletingRect(null);
     setEndBoardVisible(false);
 
     // Start fetching right away — often instant from the prefetch cache — so the
@@ -147,6 +178,14 @@ export function Game() {
       setTiles(saved.tiles);
       startedRef.current = true;
       setShowStart(false);
+      // A restored game that's already finished has no live completion
+      // animation to play (and every tile is hidden) — show the completed
+      // board right away instead of an empty one.
+      const savedCatByName = new Map(saved.activeCategories.map((c) => [c.name, c]));
+      const alreadyDone =
+        saved.activeCategories.length > 0 &&
+        countCompleted(saved.tiles, savedCatByName) === saved.activeCategories.length;
+      if (alreadyDone) setEndBoardVisible(true);
       return;
     }
     if (startedRef.current) {
@@ -186,12 +225,18 @@ export function Game() {
       if (merged && isTileComplete(merged, catByName)) {
         const isFinal = countCompleted(outcome.tiles, catByName) === activeCategories.length;
         const mergedId = merged.id;
-        // After the pop animation, start the fade immediately.
+        // Immediately pin the tile out of the flex flow at its current spot
+        // (measured in the layout effect above), so growing it doesn't disturb
+        // the rest of the board.
+        setCompletingId(mergedId);
+        // After the pop animation, fade it out in place while it scales up.
         setTimeout(() => {
           setJustMergedId(null);
           setFadingOutId(mergedId);
           setTimeout(() => {
             setFadingOutId(null);
+            setCompletingId(null);
+            setCompletingRect(null);
             setTiles((ts) => ts.map((t) => (t.id === mergedId ? { ...t, hidden: true } : t)));
             if (isFinal) setFinalModal(true);
           }, TILE_FADEOUT_MS);
@@ -226,12 +271,24 @@ export function Game() {
     setTiles(assignRows(tiles, rowCount));
   }, [tiles, rowCount]);
 
-  // Completed categories are hidden from the board until the game ends.
-  const visibleTiles = useMemo(() => tiles.filter((t) => !t.hidden), [tiles]);
+  // Completed categories are hidden from the board until the game ends. Once
+  // the completing tile has been measured and pinned (position: absolute), it
+  // is also excluded here — left in, its now-empty row would still claim a
+  // gap slot in .board__tiles' flex layout until the tile finished fading.
+  // Until measured, it stays put so the layout effect above can read its true
+  // in-flow position.
+  const visibleTiles = useMemo(
+    () => tiles.filter((t) => !t.hidden && (t.id !== completingId || !completingRect)),
+    [tiles, completingId, completingRect],
+  );
   const rows = useMemo(() => groupIntoRows(visibleTiles), [visibleTiles]);
+  const completingTile = useMemo(
+    () => (completingId && completingRect ? (tiles.find((t) => t.id === completingId) ?? null) : null),
+    [tiles, completingId, completingRect],
+  );
 
   return (
-    <div className="game" style={animationVars as JSX.CSSProperties}>
+    <div className="game" ref={gameRef} style={animationVars as JSX.CSSProperties}>
       <ProgressBar tileCount={tiles.length} groupCount={groupCount} wordsPerGroup={wordsPerGroup} />
       <Header
         groupCount={groupCount}
@@ -272,6 +329,9 @@ export function Game() {
           shakeIds={shakeIds}
           justMergedId={justMergedId}
           fadingOutId={fadingOutId}
+          completingId={completingId}
+          completingRect={completingRect}
+          completingTile={completingTile}
           expandedIds={expandedIds}
           enterDelays={enterDelays}
           leavingDelays={leavingDelays}
