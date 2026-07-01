@@ -18,7 +18,6 @@ html {
   /* light-dark() picks the first value in light mode, the second in dark mode,
      driven by the color-scheme set on <meta name="color-scheme"> (see index.html
      and useTheme). No data-theme attribute is needed. */
-  color-scheme: light dark;
   --default-hue: 150;
   --bg: light-dark(oklch(0.99 0.02 var(--default-hue)), oklch(0.22 0.02 var(--default-hue)));
   --surface: light-dark(oklch(0.92 0.025 var(--default-hue)), oklch(0.3 0.025 var(--default-hue)));

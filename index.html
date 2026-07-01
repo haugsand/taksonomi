@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="nb">
+<html lang="nb" style={{colorScheme: "light dark"}}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -20,12 +20,9 @@
       // without a flash. Key must match THEME_KEY in src/hooks/useTheme.ts.
       try {
         var t = localStorage.getItem("taksonomi:theme:v1");
-        if (t === "light" || t === "dark") {
-          document.documentElement.style.colorScheme = t;
-        } else {
-          document.documentElement.style.colorScheme = "light dark";
-        }
-      } catch (e) {}
+        if (t === "light" || t === "dark") document.documentElement.style.colorScheme = t;
+      } catch (e) {
+      }
     </script>
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
