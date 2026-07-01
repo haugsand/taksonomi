@@ -18,8 +18,8 @@ export const LEAVE_WINDOW_MS = 350;
 export const LEAVE_MAX_STEP_MS = 16;
 /** Duration of a single tile's leave animation. */
 export const LEAVE_ANIM_MS = 250;
-/** Duration of the merge "pop"; Game.tsx also waits this long before clearing
- *  the merged state and starting the completed-tile fade. */
+/** Duration of the merge "pop" played when a merge does not complete a category;
+ *  useTileCompletion waits this long before clearing the merged state. */
 export const POP_ANIM_MS = 550;
 /** Duration of the mismatch "shake". */
 export const SHAKE_ANIM_MS = 400;

@@ -35,8 +35,8 @@ export function useTileCompletion({ onHide, onFinal }: Callbacks) {
     setTimeout(() => setJustMergedIds((s) => setWithout(s, id)), POP_ANIM_MS);
   }
 
-  /** A merge that completed a category: immediately fade out while growing,
-   *  then hide (releasing its slot). No pop, no pinning. */
+  /** A merge that completed a category: immediately fade out while growing in
+   *  place, then hide (releasing its slot). No pop. */
   function completeCategory(id: string, isFinal: boolean) {
     setFadingOutIds((s) => setWith(s, id));
     setTimeout(() => {
