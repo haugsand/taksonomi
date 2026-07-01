@@ -2,22 +2,16 @@ import type { RefObject } from "preact";
 import type { Category, TileData } from "@/lib/types";
 import { useTileDrag } from "@/hooks/useTileDrag";
 import { Board } from "./Board";
-import { Tile, type Rect } from "./Tile";
+import { Tile } from "./Tile";
 
 type Props = {
   rows: TileData[][];
-  /** Tiles currently detached (pinned absolute) once they've been measured —
-   *  rendered outside any .board__row so those rows can collapse instead of
-   *  claiming an empty gap slot. More than one at a time when categories
-   *  complete close together. */
-  completingTiles: TileData[];
   catByName: Map<string, Category>;
   boardRef: RefObject<HTMLDivElement>;
   selectedId: string | null;
   shakeIds: string[];
   justMergedIds: Set<string>;
   fadingOutIds: Set<string>;
-  completingRects: Map<string, Rect>;
   expandedIds: Set<string>;
   enterDelays: Map<string, number> | null;
   leavingDelays: Map<string, number> | null;
@@ -31,14 +25,12 @@ type Props = {
 export function TileGrid(props: Props) {
   const {
     rows,
-    completingTiles,
     catByName,
     boardRef,
     selectedId,
     shakeIds,
     justMergedIds,
     fadingOutIds,
-    completingRects,
     expandedIds,
     enterDelays,
     leavingDelays,
@@ -60,7 +52,6 @@ export function TileGrid(props: Props) {
         enterDelay={enterDelays?.get(t.id)}
         leaveDelay={leavingDelays?.get(t.id)}
         isFadingOut={fadingOutIds.has(t.id)}
-        completingRect={completingRects.get(t.id) ?? null}
         categoryName={cat.name}
         categorySize={cat.words.length}
         isSelected={selectedId === t.id}
@@ -81,7 +72,6 @@ export function TileGrid(props: Props) {
           {row.map(renderTile)}
         </div>
       ))}
-      {completingTiles.map(renderTile)}
     </Board>
   );
 }

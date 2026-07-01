@@ -15,13 +15,16 @@
     />
     <meta property="og:type" content="website" />
     <meta name="theme-color" content="#0c1a14" />
-    <meta name="color-scheme" content="light dark" />
     <script>
       // Apply a saved theme override before first paint so it survives reloads
       // without a flash. Key must match THEME_KEY in src/hooks/useTheme.ts.
       try {
         var t = localStorage.getItem("taksonomi:theme:v1");
-        if (t === "light" || t === "dark") document.documentElement.style.colorScheme = t;
+        if (t === "light" || t === "dark") {
+          document.documentElement.style.colorScheme = t;
+        } else {
+          document.documentElement.style.colorScheme = "light dark";
+        }
       } catch (e) {}
     </script>
     <meta name="apple-mobile-web-app-capable" content="yes" />

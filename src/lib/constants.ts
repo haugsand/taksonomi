@@ -24,9 +24,9 @@ export const POP_ANIM_MS = 550;
 /** Duration of the mismatch "shake". */
 export const SHAKE_ANIM_MS = 400;
 /** Duration of the tile fade-out for completed categories. */
-export const TILE_FADEOUT_MS = 5000;
+export const TILE_FADEOUT_MS = 3000;
 /** Scale a completed tile grows to while it fades out, in place. */
-export const FADE_SCALE = 3;
+export const FADE_SCALE = 5;
 /** Delay after a new game before refilling the prefetch cache. */
 export const PREFETCH_REFILL_MS = 800;
 

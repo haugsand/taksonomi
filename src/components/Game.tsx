@@ -60,8 +60,8 @@ export function Game() {
   const gameRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
 
-  // Owns the post-merge pop / pin / fade-out animation lifecycle.
-  const completion = useTileCompletion(gameRef, {
+  // Owns the post-merge pop / fade-out animation lifecycle.
+  const completion = useTileCompletion({
     onHide: (id) => setTiles((ts) => ts.map((t) => (t.id === id ? { ...t, hidden: true } : t))),
     onFinal: () => setFinalModal(true),
   });
@@ -252,22 +252,11 @@ export function Game() {
     setTiles(assignRows(tiles, rowCount));
   }, [tiles, rowCount]);
 
-  // Completed categories are hidden from the board until the game ends. Once a
-  // completing tile has been measured and pinned (position: absolute), it is
-  // also excluded here — left in, its now-empty row would still claim a gap
-  // slot in .board__tiles' flex layout until the tile finished fading. Until
-  // measured (no rect yet), it stays put so the layout effect above can read
-  // its true in-flow position.
-  const { completingRects } = completion;
-  const visibleTiles = useMemo(
-    () => tiles.filter((t) => !t.hidden && !completingRects.has(t.id)),
-    [tiles, completingRects],
-  );
+  // Completed categories fade out (and grow) in place, keeping their flex slot
+  // until the fade finishes and the tile hides. They're only dropped from the
+  // board once hidden.
+  const visibleTiles = useMemo(() => tiles.filter((t) => !t.hidden), [tiles]);
   const rows = useMemo(() => groupIntoRows(visibleTiles), [visibleTiles]);
-  const completingTiles = useMemo(
-    () => tiles.filter((t) => completingRects.has(t.id)),
-    [tiles, completingRects],
-  );
 
   return (
     <div
@@ -317,8 +306,6 @@ export function Game() {
           shakeIds={shakeIds}
           justMergedIds={completion.justMergedIds}
           fadingOutIds={completion.fadingOutIds}
-          completingRects={completingRects}
-          completingTiles={completingTiles}
           expandedIds={expandedIds}
           enterDelays={enterDelays}
           leavingDelays={leavingDelays}
