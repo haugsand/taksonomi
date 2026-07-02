@@ -234,10 +234,14 @@ export function Game() {
     }
   }
 
-  const { boardRef, rowCount } = useRowCount([activeCategories, done, headerHeight]);
+  // Row count is recomputed only when a new game starts (activeCategories
+  // changes) and on orientation change — not on ordinary viewport resizes.
+  // headerHeight is included so the first measurement corrects once the fixed
+  // header's height settles; it stays constant across viewport resizes.
+  const { boardRef, rowCount } = useRowCount([activeCategories, headerHeight]);
 
   // Assign tiles to rows once we know how many rows fit, and re-assign
-  // whenever that count changes (e.g. orientation/viewport resize, where the
+  // whenever that count changes (a new game, or an orientation change where the
   // old layout may no longer fit). Gameplay changes alone (merging,
   // completing) must NOT reflow tiles — see tiles-never-move-rows — so this
   // only re-runs assignRows when rowCount itself moved since the last time we
@@ -296,7 +300,7 @@ export function Game() {
         </div>
       )}
       {endBoardVisible ? (
-        <CompletedBoard categories={activeCategories} boardRef={boardRef} />
+        <CompletedBoard categories={activeCategories} rowCount={rowCount} boardRef={boardRef} />
       ) : (
         <TileGrid
           rows={rows}

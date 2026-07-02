@@ -3,8 +3,11 @@ import type { RefObject } from "preact";
 import { measureRowCount } from "@/lib/layout";
 
 /**
- * Tracks how many tile rows fit in the board, recomputing on resize and
- * whenever `deps` change (e.g. after new tiles render and can be measured).
+ * Tracks how many tile rows fit in the board. By design the row count is only
+ * recomputed when a new game starts (via `deps`) and when the screen
+ * orientation changes — deliberately NOT on ordinary viewport resizes (mobile
+ * URL-bar show/hide, on-screen keyboard, window drags), so tiles don't reflow
+ * out from under the player while a game is in progress.
  */
 export function useRowCount(deps: unknown[]): {
   boardRef: RefObject<HTMLDivElement>;
@@ -20,22 +23,19 @@ export function useRowCount(deps: unknown[]): {
 
   useLayoutEffect(() => {
     recompute();
-    window.addEventListener("resize", recompute);
-    window.visualViewport?.addEventListener("resize", recompute);
     // Belt-and-braces for orientation changes: some mobile browsers report
     // stale innerHeight/visualViewport dimensions for a moment right after
     // rotation, so re-measure again shortly after the change settles.
     const onOrientationChange = () => setTimeout(recompute, 100);
     window.addEventListener("orientationchange", onOrientationChange);
     return () => {
-      window.removeEventListener("resize", recompute);
-      window.visualViewport?.removeEventListener("resize", recompute);
       window.removeEventListener("orientationchange", onOrientationChange);
     };
   }, [recompute]);
 
   useEffect(() => {
     // Recompute after tiles render so we can measure the actual row height.
+    // Driven by `deps`, which change on a new game (never on viewport resize).
     const id = requestAnimationFrame(recompute);
     return () => cancelAnimationFrame(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps

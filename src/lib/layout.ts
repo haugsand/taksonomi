@@ -23,6 +23,24 @@ export function measureRowCount(el: HTMLElement): number {
   return Math.max(1, Math.floor((available + rowGap) / (rowHeight + rowGap)));
 }
 
+/** Splits `items` into `rowCount` rows as evenly as possible (earlier rows take
+ *  the remainder), never producing more rows than there are items. */
+export function chunkIntoRows<T>(items: T[], rowCount: number): T[][] {
+  const n = items.length;
+  if (n === 0) return [];
+  const r = Math.max(1, Math.min(rowCount, n));
+  const base = Math.floor(n / r);
+  const rem = n % r;
+  const rows: T[][] = [];
+  let i = 0;
+  for (let k = 0; k < r; k++) {
+    const size = base + (k < rem ? 1 : 0);
+    rows.push(items.slice(i, i + size));
+    i += size;
+  }
+  return rows;
+}
+
 /** Distributes tiles across `rowCount` rows as evenly as possible, setting `row`. */
 export function assignRows(tiles: TileData[], rowCount: number): TileData[] {
   const n = tiles.length;
