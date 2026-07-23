@@ -1,0 +1,132 @@
+/* Shared "poster" modal style (design variant F3): a full-bleed field of pill
+   word-tiles up top, then a left-aligned body with the title, an arrow-bulleted
+   list and the size picker. Used by StartModal and CompletionModal. All colours
+   go through light-dark() / the existing oklch tokens so both themes are covered
+   and every text/background pair clears WCAG AA (>= 4.5:1). */
+
+.poster-modal {
+  /* One arrow icon, one colour, for every list item — drawn as an SVG mask so it
+     tints with the text colour and never falls back to a font glyph. */
+  --pm-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 12h13M12 6l6 6-6 6' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --pm-poster-bg: light-dark(
+    oklch(0.9 0.03 var(--default-hue)),
+    oklch(0.26 0.03 var(--default-hue))
+  );
+  /* Accent used for text-bearing fills; darker/lighter than --primary so white
+     (light) and near-black (dark) text stay above 4.5:1. */
+  --pm-accent-bg: light-dark(#4f46e5, #a5b4fc);
+  --pm-accent-fg: light-dark(#ffffff, #10131f);
+
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- poster header: the pill field ---- */
+.poster-modal__poster {
+  background-color: var(--pm-poster-bg);
+  padding: clamp(0.85rem, 3.5vw, 1.15rem);
+}
+
+.tile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.tile-field__row {
+  display: flex;
+  gap: 0.4rem;
+}
+.tile-field__pill {
+  height: clamp(1.25rem, 5vw, 1.6rem);
+  border-radius: 999px;
+  background-color: oklch(0.7 0.14 var(--h));
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.28);
+}
+.tile-field__spacer {
+  visibility: hidden;
+}
+
+/* ---- body ---- */
+.poster-modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.3rem clamp(1.1rem, 4vw, 1.6rem) 1.5rem;
+}
+
+.poster-modal__title {
+  margin: 0;
+  font-size: clamp(1.6rem, 6vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.poster-modal__intro {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: var(--muted-fg);
+}
+
+.poster-modal__rules {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.poster-modal__rules li {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--muted-fg);
+}
+.poster-modal__rules li::before {
+  content: "";
+  flex: none;
+  width: 1.05em;
+  height: 1.05em;
+  margin-top: 0.14em;
+  background-color: var(--muted-fg);
+  -webkit-mask: var(--pm-arrow) center / contain no-repeat;
+  mask: var(--pm-arrow) center / contain no-repeat;
+}
+
+.poster-modal__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.poster-modal__label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-fg);
+}
+
+.poster-modal__action {
+  align-self: flex-start;
+  padding: 0.55rem 1.15rem;
+  border: 0;
+  border-radius: 999px;
+  background-color: var(--pm-accent-bg);
+  color: var(--pm-accent-fg);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition:
+    filter 0.12s ease,
+    transform 0.12s ease;
+}
+.poster-modal__action:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+.poster-modal__action:active {
+  transform: none;
+}

@@ -52,6 +52,9 @@ export default defineConfig({
   build: { cssMinify: "esbuild" },
   test: {
     environment: "happy-dom",
-    include: ["src/**/*.test.ts"],
+    include: ["src/**/*.test.ts", "server/**/*.test.ts"],
+    // happy-dom under Vitest doesn't expose localStorage as a global; the setup
+    // installs an in-memory Storage so storage.ts is testable. See test-setup.ts.
+    setupFiles: ["./src/test-setup.ts"],
   },
 });

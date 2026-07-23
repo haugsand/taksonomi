@@ -6,12 +6,15 @@ type Props = {
   ariaLabel: string;
   /** Called on Esc and backdrop click. Omit to make the modal non-dismissable. */
   onClose?: () => void;
+  /** Drop the default padding/centering so a child can render edge-to-edge (e.g.
+   *  a full-bleed poster header). The child then owns its own spacing. */
+  bleed?: boolean;
   children: ComponentChildren;
 };
 
 /** Generic centered dialog: dimmed backdrop, fade + scale entrance, focuses its
  *  first control. With `onClose` set it closes on Esc or backdrop click. */
-export function Modal({ ariaLabel, onClose, children }: Props) {
+export function Modal({ ariaLabel, onClose, bleed, children }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -28,7 +31,7 @@ export function Modal({ ariaLabel, onClose, children }: Props) {
     <div className="modal__backdrop" onClick={onClose}>
       <div
         ref={dialogRef}
-        className="modal"
+        className={bleed ? "modal modal--bleed" : "modal"}
         role="dialog"
         aria-modal="true"
         aria-label={ariaLabel}

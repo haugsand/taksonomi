@@ -48,6 +48,15 @@
   text-align: center;
 }
 
+/* Full-bleed variant: the child owns all padding/layout so it can run a poster
+   header edge-to-edge. Rounded corners still clip it via the modal's overflow. */
+.modal--bleed {
+  padding: 0;
+  gap: 0;
+  align-items: stretch;
+  text-align: left;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .modal__backdrop,
   .modal {

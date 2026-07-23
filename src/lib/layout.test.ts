@@ -33,7 +33,9 @@ describe("assignRows", () => {
 describe("chunkIntoRows", () => {
   it("front-loads the remainder across rows", () => {
     // 10 items over 3 rows -> 4, 3, 3
-    expect(chunkIntoRows([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], 3).map((r) => r.length)).toEqual([4, 3, 3]);
+    expect(chunkIntoRows([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], 3).map((r) => r.length)).toEqual([
+      4, 3, 3,
+    ]);
   });
 
   it("preserves item order", () => {

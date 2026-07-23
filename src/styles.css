@@ -1,3 +1,15 @@
+/* DM Sans, self-hosted (was Google Fonts). Latin-subset variable file covering
+   the 400–700 weight axis the UI uses — enough for Norwegian (æ ø å) plus the
+   punctuation in the interface (× — €). Vite fingerprints and emits it, so it is
+   cached immutably and needs no third-party connection. SIL Open Font License. */
+@font-face {
+  font-family: "DM Sans";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/dm-sans-latin.woff2") format("woff2");
+}
+
 *,
 *::before,
 *::after {
