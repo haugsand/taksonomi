@@ -15,7 +15,7 @@ import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
-const TARGET_CATEGORIES = 165;
+const TARGET_CATEGORIES = 172;
 // Each raw category lists words from easiest-to-guess to hardest; we keep the
 // first 40 so the 10 most obscure (listed last) are dropped.
 const TARGET_WORDS = 40;
