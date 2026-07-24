@@ -14,3 +14,12 @@ export const GAME_SIZES: GameSize[] = [
   { label: "XXL", groups: 35, wordsPerGroup: 35 },
   { label: "XXXL", groups: 40, wordsPerGroup: 40 },
 ];
+
+/**
+ * The offered size matching these counts, or undefined. The API accepts only
+ * these pairs, so nothing — a stored size, a hand-written query string — can
+ * ask for a board the UI never renders.
+ */
+export function findGameSize(groups: number, wordsPerGroup: number): GameSize | undefined {
+  return GAME_SIZES.find((s) => s.groups === groups && s.wordsPerGroup === wordsPerGroup);
+}

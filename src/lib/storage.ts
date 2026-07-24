@@ -1,23 +1,42 @@
 import type { Category, TileData } from "./types";
 import { SIZE_KEY, STATE_KEY } from "./constants";
+import { findGameSize } from "./sizes";
 
 export type Size = { groups: number; wordsPerGroup: number };
 export type GameState = Size & { activeCategories: Category[]; tiles: TileData[] };
 
 export const DEFAULT_SIZE: Size = { groups: 15, wordsPerGroup: 15 };
 
+function parse(raw: string): unknown {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return undefined;
+  }
+}
+
+/** The raw entry, or null when absent — or unreadable, e.g. storage disabled. */
+function readRaw(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
 export function loadSize(): Size {
   if (typeof window === "undefined") return DEFAULT_SIZE;
-  try {
-    const raw = localStorage.getItem(SIZE_KEY);
-    if (raw) {
-      const p = JSON.parse(raw);
-      if (typeof p?.groups === "number" && typeof p?.wordsPerGroup === "number") {
-        return { groups: p.groups, wordsPerGroup: p.wordsPerGroup };
-      }
-    }
-  } catch {
-    // ignore
+  const raw = readRaw(SIZE_KEY);
+  const p = (raw === null ? undefined : parse(raw)) as Partial<Size> | undefined;
+  // Only sizes the UI offers are accepted: the API rejects anything else, so a
+  // stale or hand-edited value would otherwise leave the game unable to start
+  // until localStorage is cleared by hand.
+  if (
+    typeof p?.groups === "number" &&
+    typeof p?.wordsPerGroup === "number" &&
+    findGameSize(p.groups, p.wordsPerGroup)
+  ) {
+    return { groups: p.groups, wordsPerGroup: p.wordsPerGroup };
   }
   return DEFAULT_SIZE;
 }
@@ -30,25 +49,66 @@ export function saveSize(size: Size): void {
   }
 }
 
+function isStringArray(v: unknown): v is string[] {
+  return Array.isArray(v) && v.every((s) => typeof s === "string");
+}
+
+function isCategory(v: unknown): v is Category {
+  if (typeof v !== "object" || v === null) return false;
+  const c = v as Record<string, unknown>;
+  return typeof c.name === "string" && isStringArray(c.words);
+}
+
+/**
+ * Every field the board reads while rendering. A tile that passes here cannot
+ * throw in Tile.tsx — and since the state is only replaced, never re-validated,
+ * a malformed one would otherwise break the game on every reload.
+ */
+function isTileData(v: unknown): v is TileData {
+  if (typeof v !== "object" || v === null) return false;
+  const t = v as Record<string, unknown>;
+  return (
+    typeof t.id === "string" &&
+    typeof t.categoryName === "string" &&
+    isStringArray(t.words) &&
+    (t.hue === undefined || typeof t.hue === "number") &&
+    (t.row === undefined || typeof t.row === "number") &&
+    (t.hidden === undefined || typeof t.hidden === "boolean")
+  );
+}
+
+function isGameState(v: unknown): v is GameState {
+  if (typeof v !== "object" || v === null) return false;
+  const s = v as Record<string, unknown>;
+  return (
+    Array.isArray(s.activeCategories) &&
+    s.activeCategories.every(isCategory) &&
+    Array.isArray(s.tiles) &&
+    s.tiles.every(isTileData)
+  );
+}
+
 /** Returns a saved game only when it matches the requested size, else null. */
 export function loadGameState(size: Size): GameState | null {
-  try {
-    const raw = localStorage.getItem(STATE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<GameState>;
-    const cats = parsed.activeCategories;
-    if (
-      Array.isArray(cats) &&
-      cats.length === size.groups &&
-      cats.every((c) => c.words?.length === size.wordsPerGroup) &&
-      Array.isArray(parsed.tiles)
-    ) {
-      return { ...size, activeCategories: cats, tiles: parsed.tiles };
-    }
-  } catch {
-    // ignore
+  const raw = readRaw(STATE_KEY);
+  if (raw === null) return null;
+
+  const parsed = parse(raw);
+  if (!isGameState(parsed)) {
+    // Unparseable or the wrong shape — drop it rather than leave a value behind
+    // that fails the same way on every later load.
+    clearGameState();
+    return null;
   }
-  return null;
+
+  // A game of a different size is still valid; it is kept so switching back to
+  // that size restores it.
+  const fitsSize =
+    parsed.activeCategories.length === size.groups &&
+    parsed.activeCategories.every((c) => c.words.length === size.wordsPerGroup);
+  if (!fitsSize) return null;
+
+  return { ...size, activeCategories: parsed.activeCategories, tiles: parsed.tiles };
 }
 
 export function saveGameState(state: GameState): void {

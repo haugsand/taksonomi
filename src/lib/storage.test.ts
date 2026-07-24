@@ -17,8 +17,8 @@ describe("size", () => {
   });
 
   it("round-trips a saved size", () => {
-    saveSize({ groups: 20, wordsPerGroup: 25 });
-    expect(loadSize()).toEqual({ groups: 20, wordsPerGroup: 25 });
+    saveSize({ groups: 25, wordsPerGroup: 25 });
+    expect(loadSize()).toEqual({ groups: 25, wordsPerGroup: 25 });
   });
 
   it("falls back to the default for malformed data", () => {
@@ -28,6 +28,13 @@ describe("size", () => {
 
   it("falls back to the default for the wrong shape", () => {
     localStorage.setItem("taksonomi:size:v1", JSON.stringify({ groups: "a" }));
+    expect(loadSize()).toEqual(DEFAULT_SIZE);
+  });
+
+  it("falls back to the default for a size the UI does not offer", () => {
+    // The API only accepts GAME_SIZES, so restoring 20x25 would leave the game
+    // stuck on an error it could never retry out of.
+    localStorage.setItem("taksonomi:size:v1", JSON.stringify({ groups: 20, wordsPerGroup: 25 }));
     expect(loadSize()).toEqual(DEFAULT_SIZE);
   });
 });
@@ -62,5 +69,34 @@ describe("game state", () => {
     saveGameState(state);
     clearGameState();
     expect(loadGameState({ groups: 2, wordsPerGroup: 2 })).toBeNull();
+  });
+
+  it("keeps a game of another size so switching back restores it", () => {
+    saveGameState(state);
+    expect(loadGameState({ groups: 3, wordsPerGroup: 2 })).toBeNull();
+    expect(loadGameState({ groups: 2, wordsPerGroup: 2 })).toEqual(state);
+  });
+
+  it("rejects and discards a malformed state instead of returning it", () => {
+    // Each of these renders fine in the old shape check but throws in Tile.tsx,
+    // and would keep throwing on every reload while it stayed in storage.
+    const malformed = [
+      { ...state, tiles: [{ id: "t", categoryName: "a" }] }, // no words
+      { ...state, tiles: [{ id: "t", categoryName: "a", words: "a1" }] }, // words not an array
+      { ...state, tiles: [{ id: "t", categoryName: "a", words: [1, 2] }] }, // words not strings
+      { ...state, tiles: [null] },
+      { ...state, activeCategories: [{ name: "a" }, { name: "b" }] }, // no words
+      { ...state, activeCategories: "nope" },
+      "{not json",
+    ];
+
+    for (const bad of malformed) {
+      localStorage.setItem(
+        "taksonomi:state:v3",
+        typeof bad === "string" ? bad : JSON.stringify(bad),
+      );
+      expect(loadGameState({ groups: 2, wordsPerGroup: 2 })).toBeNull();
+      expect(localStorage.getItem("taksonomi:state:v3")).toBeNull();
+    }
   });
 });
