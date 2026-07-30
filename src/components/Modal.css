@@ -18,39 +18,50 @@
   }
 }
 
-.modal__backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  background-color: oklch(0.3 0.02 var(--default-hue));
-  animation: modal-backdrop-in 0.22s ease both;
-}
-
+/* The <dialog> itself is the card. The browser places it in the top layer, so
+   no z-index is needed — .game's stacking context can no longer trap it, which
+   is one of the reasons for using the native element. */
 .modal {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.25rem;
-  width: min(28rem, 100%);
+  /* The UA centres a modal dialog with `inset: 0; margin: auto`, but the global
+     `* { margin: 0 }` reset in styles.css wins over the UA sheet and pins it to
+     the top-left. Restore it explicitly. */
+  margin: auto;
+  width: min(28rem, calc(100% - 2rem));
+  max-width: none;
   max-height: min(90vh, 40rem);
   overflow-y: auto;
-  padding: 1.75rem;
+  padding: 0;
   background-color: var(--surface);
   color: var(--fg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
   animation: modal-in 0.22s ease both;
+}
+
+/* ::backdrop historically inherited from nothing rather than from the dialog,
+   and that is still uneven across browsers — so this colour is written out
+   instead of reaching for --default-hue (150). */
+.modal::backdrop {
+  background-color: oklch(0.3 0.02 150);
+  animation: modal-backdrop-in 0.22s ease both;
+}
+
+/* Inner wrapper. It lets a backdrop click be told apart from a content click by
+   event target alone (see Modal.tsx), and keeps padding off the scroll box. */
+.modal__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.75rem;
   text-align: center;
 }
 
 /* Full-bleed variant: the child owns all padding/layout so it can run a poster
-   header edge-to-edge. Rounded corners still clip it via the modal's overflow. */
-.modal--bleed {
+   header edge-to-edge. Rounded corners still clip it via the dialog's
+   overflow. */
+.modal--bleed .modal__content {
   padding: 0;
   gap: 0;
   align-items: stretch;
@@ -58,8 +69,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .modal__backdrop,
-  .modal {
+  .modal,
+  .modal::backdrop {
     animation: none;
   }
 }

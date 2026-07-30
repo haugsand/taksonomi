@@ -88,27 +88,40 @@ function isGameState(v: unknown): v is GameState {
   );
 }
 
-/** Returns a saved game only when it matches the requested size, else null. */
+/**
+ * Returns a saved game only when it matches the requested size, else null.
+ *
+ * Nothing here may throw. A restore that throws is the one failure the player
+ * cannot get out of on their own: the same stored value is read again on every
+ * reload, so the game would be permanently dead. Anything unexpected therefore
+ * drops the entry and starts fresh — ErrorBoundary is the backstop, not the
+ * plan.
+ */
 export function loadGameState(size: Size): GameState | null {
-  const raw = readRaw(STATE_KEY);
-  if (raw === null) return null;
+  try {
+    const raw = readRaw(STATE_KEY);
+    if (raw === null) return null;
 
-  const parsed = parse(raw);
-  if (!isGameState(parsed)) {
-    // Unparseable or the wrong shape — drop it rather than leave a value behind
-    // that fails the same way on every later load.
+    const parsed = parse(raw);
+    if (!isGameState(parsed)) {
+      // Unparseable or the wrong shape — drop it rather than leave a value
+      // behind that fails the same way on every later load.
+      clearGameState();
+      return null;
+    }
+
+    // A game of a different size is still valid; it is kept so switching back
+    // to that size restores it.
+    const fitsSize =
+      parsed.activeCategories.length === size.groups &&
+      parsed.activeCategories.every((c) => c.words.length === size.wordsPerGroup);
+    if (!fitsSize) return null;
+
+    return { ...size, activeCategories: parsed.activeCategories, tiles: parsed.tiles };
+  } catch {
     clearGameState();
     return null;
   }
-
-  // A game of a different size is still valid; it is kept so switching back to
-  // that size restores it.
-  const fitsSize =
-    parsed.activeCategories.length === size.groups &&
-    parsed.activeCategories.every((c) => c.words.length === size.wordsPerGroup);
-  if (!fitsSize) return null;
-
-  return { ...size, activeCategories: parsed.activeCategories, tiles: parsed.tiles };
 }
 
 export function saveGameState(state: GameState): void {

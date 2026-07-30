@@ -1,6 +1,7 @@
 import type { RefObject } from "preact";
 import type { Category, TileData } from "@/lib/types";
 import { useTileDrag } from "@/hooks/useTileDrag";
+import { useBoardKeyboard } from "@/hooks/useBoardKeyboard";
 import { Board } from "./Board";
 import { Tile } from "./Tile";
 
@@ -19,6 +20,10 @@ type Props = {
   loading: boolean;
   onTileClick: (id: string) => void;
   onCombine: (aId: string, bId: string) => void;
+  /** Escape on the board backs out of a half-made selection. */
+  onClearSelection: () => void;
+  /** The tile a merge just produced; the keyboard cursor follows it there. */
+  mergedTileId: string | null;
 };
 
 /** Renders the tile board and owns the drag-and-drop interaction state. */
@@ -38,9 +43,16 @@ export function TileGrid(props: Props) {
     loading,
     onTileClick,
     onCombine,
+    onClearSelection,
+    mergedTileId,
   } = props;
 
   const { getTileDragProps } = useTileDrag(onCombine);
+  const { tabbableId, registerTile, onKeyDown, onTileFocus } = useBoardKeyboard({
+    rows,
+    onEscape: onClearSelection,
+    cursorTileId: mergedTileId,
+  });
 
   const renderTile = (t: TileData) => {
     const cat = catByName.get(t.categoryName);
@@ -49,6 +61,9 @@ export function TileGrid(props: Props) {
       <Tile
         key={t.id}
         tile={t}
+        isTabbable={t.id === tabbableId}
+        elementRef={(el) => registerTile(t.id, el)}
+        onFocus={() => onTileFocus(t.id)}
         enterDelay={enterDelays?.get(t.id)}
         leaveDelay={leavingDelays?.get(t.id)}
         isFadingOut={fadingOutIds.has(t.id)}
@@ -66,12 +81,17 @@ export function TileGrid(props: Props) {
   };
 
   return (
-    <Board boardRef={boardRef}>
-      {rows.map((row, i) => (
-        <div key={i} className="board__row">
-          {row.map(renderTile)}
-        </div>
-      ))}
-    </Board>
+    // The keydown listener sits on the board rather than each tile: it needs
+    // the whole grid to work out where the arrow keys lead, and one listener
+    // beats 1600.
+    <div onKeyDown={onKeyDown} className="tile-grid">
+      <Board boardRef={boardRef} ariaLabel="Spillebrett">
+        {rows.map((row, i) => (
+          <div key={i} className="board__row">
+            {row.map(renderTile)}
+          </div>
+        ))}
+      </Board>
+    </div>
   );
 }

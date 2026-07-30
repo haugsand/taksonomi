@@ -1,5 +1,6 @@
 import type { JSX } from "preact";
 import type { TileData } from "@/lib/types";
+import { completedTileLabel, tileLabel } from "@/lib/announce";
 import "./Tile.css";
 
 export type { TileData };
@@ -24,6 +25,13 @@ type Props = {
   leaveDelay?: number;
   /** When true, the tile fades out slowly (category completion). */
   isFadingOut?: boolean;
+  /** Roving tabindex: only the board's current tile is in the tab order, so the
+   *  whole board is one tab stop instead of up to 1600. */
+  isTabbable?: boolean;
+  /** Hands the element to the board so it can move focus and measure position
+   *  without an identifying attribute in the DOM. */
+  elementRef?: (el: HTMLButtonElement | null) => void;
+  onFocus?: () => void;
   onClick: () => void;
   onDragStart: (e: DragEvent<HTMLButtonElement>) => void;
   onDragEnd: () => void;
@@ -47,6 +55,8 @@ export function Tile(props: Props) {
     enterDelay,
     leaveDelay,
     isFadingOut,
+    isTabbable = true,
+    elementRef,
   } = props;
 
   const isGroup = tile.words.length > 1;
@@ -73,13 +83,25 @@ export function Tile(props: Props) {
 
   const showWords = !isComplete || isExpanded;
 
+  // The tile id embeds the category name ("Kjemiske grunnstoffer::hydrogen"),
+  // so it must not reach the DOM: it was rendered as data-tile-id, read by
+  // nothing, and handed every answer to anyone who opened the inspector. The
+  // same reasoning governs the label below — see announce.ts.
+  const label = isComplete
+    ? completedTileLabel(categoryName, tile.words)
+    : tileLabel(tile.words, categorySize, false);
+
   return (
     <button
       type="button"
       className={classes.join(" ")}
       style={style}
-      data-tile-id={tile.id}
+      ref={elementRef}
+      tabIndex={isTabbable ? 0 : -1}
+      aria-label={label ?? undefined}
+      aria-pressed={isComplete ? undefined : isSelected}
       draggable={!disabled && !isComplete}
+      onFocus={props.onFocus}
       onClick={props.onClick}
       onDragStart={props.onDragStart}
       onDragEnd={props.onDragEnd}

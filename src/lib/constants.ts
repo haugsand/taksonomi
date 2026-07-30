@@ -1,46 +1,108 @@
 /** App-wide constants. Values tied to a specific type or already living in a
  *  dedicated config module (e.g. GAME_SIZES in sizes.ts) stay there. */
 
-// Animation durations (ms) — the single source of truth for both the JS timing
-// (stagger windows and setTimeouts in Game.tsx) and the CSS animations. The CSS
-// side never hardcodes a duration: it reads these via the custom properties in
-// `animationVars` below, applied to the .game root. Change a value here only.
+/**
+ * Animation timings (ms). These are the single source of truth for *both* the
+ * JS timing (stagger windows and setTimeouts in Game.tsx) and the CSS
+ * animations: the CSS never hardcodes a duration, it reads each one through the
+ * custom properties `animationVars()` puts on the .game root.
+ *
+ * Crucially, that includes the reduced-motion case. An earlier version squashed
+ * the durations with a `@media (prefers-reduced-motion: reduce)` block in
+ * Tile.css, which the JS knew nothing about: the tile vanished instantly while
+ * `setTimeout(..., TILE_FADEOUT_MS)` still held the board frozen for three
+ * seconds per completed category, and delayed the win modal by the same. So the
+ * preference is resolved in JS (see useReducedMotion) and picks a whole profile
+ * here — the stylesheet must never override a *duration* again.
+ *
+ * CSS may still switch *which* animation plays (see .tile--shake, which becomes
+ * a colour flash under reduced motion). The division is: CSS decides what, this
+ * file decides how long.
+ */
+export type Timings = {
+  /** Total window over which all tiles stagger in on a new game. */
+  enterWindow: number;
+  /** Largest delay added between consecutive tile entrances. */
+  enterMaxStep: number;
+  /** Duration of a single tile's enter animation. */
+  enterAnim: number;
+  /** Window over which the previous game's tiles stagger out. */
+  leaveWindow: number;
+  /** Largest delay added between consecutive tile exits. */
+  leaveMaxStep: number;
+  /** Duration of a single tile's leave animation. */
+  leaveAnim: number;
+  /** Merge "pop" played when a merge does not complete a category;
+   *  useTileCompletion waits this long before clearing the merged state. */
+  pop: number;
+  /** Mismatch feedback: a shake, or a colour flash under reduced motion. */
+  shake: number;
+  /** Fade-out of a completed category's tile. */
+  fadeout: number;
+  /** Scale a completed tile grows to while it fades out, in place. */
+  fadeScale: number;
+};
 
-/** Total time window over which all tiles stagger in on a new game. */
-export const ENTER_WINDOW_MS = 700;
-/** Largest delay added between consecutive tile entrances. */
-export const ENTER_MAX_STEP_MS = 22;
-/** Duration of a single tile's enter animation. */
-export const ENTER_ANIM_MS = 300;
-/** Time window over which the previous game's tiles stagger out. */
-export const LEAVE_WINDOW_MS = 350;
-/** Largest delay added between consecutive tile exits. */
-export const LEAVE_MAX_STEP_MS = 16;
-/** Duration of a single tile's leave animation. */
-export const LEAVE_ANIM_MS = 250;
-/** Duration of the merge "pop" played when a merge does not complete a category;
- *  useTileCompletion waits this long before clearing the merged state. */
-export const POP_ANIM_MS = 550;
-/** Duration of the mismatch "shake". */
-export const SHAKE_ANIM_MS = 400;
-/** Duration of the tile fade-out for completed categories. */
-export const TILE_FADEOUT_MS = 3000;
-/** Scale a completed tile grows to while it fades out, in place. */
-export const FADE_SCALE = 5;
-/** Delay after a new game before refilling the prefetch cache. */
+const FULL: Timings = {
+  enterWindow: 700,
+  enterMaxStep: 22,
+  enterAnim: 300,
+  leaveWindow: 350,
+  leaveMaxStep: 16,
+  leaveAnim: 250,
+  pop: 550,
+  shake: 400,
+  fadeout: 3000,
+  fadeScale: 5,
+};
+
+/**
+ * Reduced motion: no travel and no staggering, but not simply zero.
+ *
+ *  - `fadeout: 200` keeps a completed category on screen just long enough to
+ *    read what you solved. That is a pause, not motion.
+ *  - `shake: 400` is unchanged: the mismatch animation becomes a colour flash
+ *    (Tile.css), which still needs its duration. Removing it outright would
+ *    leave reduced-motion players with no mismatch feedback at all beyond the
+ *    live region.
+ *  - `fadeScale: 1` cancels the grow-while-fading, which is the motion part.
+ *  - 1ms rather than 0 for the animations, so `animation-fill-mode: both`
+ *    still resolves to the end state.
+ */
+const REDUCED: Timings = {
+  enterWindow: 0,
+  enterMaxStep: 0,
+  enterAnim: 1,
+  leaveWindow: 0,
+  leaveMaxStep: 0,
+  leaveAnim: 1,
+  pop: 1,
+  shake: 400,
+  fadeout: 200,
+  fadeScale: 1,
+};
+
+/** The timing profile for the given motion preference. */
+export function timings(reducedMotion: boolean): Timings {
+  return reducedMotion ? REDUCED : FULL;
+}
+
+/** Timings as CSS custom properties, spread onto the .game root's `style` so
+ *  Tile.css can read each one via var(). */
+export function animationVars(t: Timings): Record<string, string> {
+  return {
+    "--tile-enter-duration": `${t.enterAnim}ms`,
+    "--tile-leave-duration": `${t.leaveAnim}ms`,
+    "--tile-pop-duration": `${t.pop}ms`,
+    "--tile-shake-duration": `${t.shake}ms`,
+    "--tile-fadeout-duration": `${t.fadeout}ms`,
+    "--tile-fade-scale": `${t.fadeScale}`,
+  };
+}
+
+/** Delay after a new game before refilling the prefetch cache. Not a motion
+ *  value — unaffected by the motion preference. */
 export const PREFETCH_REFILL_MS = 800;
-
-/** Animation durations as CSS custom properties. Spread onto the .game root's
- *  `style` so Tile.css can read each duration via var() — keeping the values
- *  defined only here, never duplicated in the stylesheet. */
-export const animationVars = {
-  "--tile-enter-duration": `${ENTER_ANIM_MS}ms`,
-  "--tile-leave-duration": `${LEAVE_ANIM_MS}ms`,
-  "--tile-pop-duration": `${POP_ANIM_MS}ms`,
-  "--tile-shake-duration": `${SHAKE_ANIM_MS}ms`,
-  "--tile-fadeout-duration": `${TILE_FADEOUT_MS}ms`,
-  "--tile-fade-scale": `${FADE_SCALE}`,
-} as const;
 
 // localStorage keys. Bump the version suffix when the stored shape changes.
 

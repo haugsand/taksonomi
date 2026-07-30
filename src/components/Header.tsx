@@ -31,18 +31,47 @@ export function Header({
 }: Props) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  function close(returnFocus: boolean) {
+    setOpen(false);
+    if (returnFocus) triggerRef.current?.focus();
+  }
 
   useEffect(() => {
     if (!open) return;
     const onDocClick = (e: MouseEvent) => {
       if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
     };
+    // Escape closes and hands focus back, the way every other popover behaves.
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        close(true);
+      }
+    };
+    // Tabbing past the last item used to leave the popover hanging open behind
+    // the rest of the page; mousedown alone never saw it.
+    const onFocusOut = (e: FocusEvent) => {
+      const next = e.relatedTarget as Node | null;
+      if (next && !wrapRef.current?.contains(next)) setOpen(false);
+    };
     document.addEventListener("mousedown", onDocClick);
-    return () => document.removeEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onKeyDown);
+    const wrap = wrapRef.current;
+    wrap?.addEventListener("focusout", onFocusOut);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onKeyDown);
+      wrap?.removeEventListener("focusout", onFocusOut);
+    };
   }, [open]);
 
   return (
     <header className="header" ref={headerRef}>
+      {/* The visible wordmark lives in the start modal, which is gone once a
+          game is running — leaving the document with no h1 at all. */}
+      <h1 className="sr-only">Taksonomi</h1>
       <ProgressBar tileCount={tileCount} groupCount={groupCount} wordsPerGroup={wordsPerGroup} />
       <div className="header__bar">
         <p className="header__progress">
@@ -57,26 +86,30 @@ export function Header({
           >
             {theme === "dark" ? "☀️" : "🌙"}
           </button>
+          {/* Deliberately not role="menu"/"menuitem". Those roles are a
+              contract: arrow-key navigation, Home/End, typeahead, focus moved
+              into the menu on open, Tab closing it. This popover promised all
+              of that and implemented none. It is eight ordinary buttons, so it
+              says so — and Tab, the behaviour users then expect, just works. */}
           <div className="header__dropdown" ref={wrapRef}>
             <button
+              ref={triggerRef}
               type="button"
               className="header__button"
               onClick={() => setOpen((v) => !v)}
-              aria-haspopup="menu"
               aria-expanded={open}
             >
               Nytt spill ▾
             </button>
             {open && (
-              <div className="header__menu" role="menu">
+              <div className="header__menu">
                 {GAME_SIZES.map((s) => (
                   <button
                     key={s.label}
                     type="button"
-                    role="menuitem"
                     className="header__menu-item"
                     onClick={() => {
-                      setOpen(false);
+                      close(false);
                       onNewGame(s);
                     }}
                   >

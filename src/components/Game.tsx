@@ -11,19 +11,13 @@ import { usePersistentSize } from "@/hooks/usePersistentSize";
 import { useGameSource } from "@/hooks/useGameSource";
 import { useRowCount } from "@/hooks/useRowCount";
 import { useTileCompletion } from "@/hooks/useTileCompletion";
-import {
-  ENTER_WINDOW_MS,
-  ENTER_MAX_STEP_MS,
-  ENTER_ANIM_MS,
-  LEAVE_WINDOW_MS,
-  LEAVE_MAX_STEP_MS,
-  LEAVE_ANIM_MS,
-  SHAKE_ANIM_MS,
-  PREFETCH_REFILL_MS,
-  animationVars,
-} from "@/lib/constants";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { useAnnouncer } from "@/hooks/useAnnouncer";
+import { MISMATCH, categoryCompleted, merged } from "@/lib/announce";
+import { PREFETCH_REFILL_MS, animationVars, timings } from "@/lib/constants";
 import type { GameSize } from "@/lib/sizes";
 import { Header } from "./Header";
+import { LiveRegion } from "./LiveRegion";
 import { TileGrid } from "./TileGrid";
 import { CompletedBoard } from "./CompletedBoard";
 import { CompletionModal } from "./CompletionModal";
@@ -36,12 +30,24 @@ export function Game() {
   const [theme, setTheme] = useTheme();
   const { getGame, prefetchAll } = useGameSource();
 
+  // One motion preference, one set of durations, shared by the JS timers below
+  // and (via animationVars) the CSS. See constants.ts.
+  const reducedMotion = useReducedMotion();
+  const anim = useMemo(() => timings(reducedMotion), [reducedMotion]);
+
+  // Everything the board conveys through animation and colour also has to be
+  // said out loud; nothing in the core loop was reaching assistive tech.
+  const [announcement, announce] = useAnnouncer();
+
   const [activeCategories, setActiveCategories] = useState<Category[]>([]);
   const [tiles, setTiles] = useState<TileData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [shakeIds, setShakeIds] = useState<string[]>([]);
+  // The tile the last merge produced, so the keyboard cursor can follow it
+  // rather than being left pointing at a tile that no longer exists.
+  const [mergedTileId, setMergedTileId] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [enterDelays, setEnterDelays] = useState<Map<string, number> | null>(null);
   const [leavingDelays, setLeavingDelays] = useState<Map<string, number> | null>(null);
@@ -64,6 +70,7 @@ export function Game() {
   const completion = useTileCompletion({
     onHide: (id) => setTiles((ts) => ts.map((t) => (t.id === id ? { ...t, hidden: true } : t))),
     onFinal: () => setFinalModal(true),
+    timings: anim,
   });
 
   // Keep headerHeight in sync with the fixed header's rendered height.
@@ -91,6 +98,7 @@ export function Game() {
     setError(null);
     setEnterDelays(null);
     setSelectedId(null);
+    setMergedTileId(null);
     setFinalModal(false);
     completion.reset();
     setEndBoardVisible(false);
@@ -105,7 +113,7 @@ export function Game() {
     if (leaving.length > 0) {
       const { delays, totalMs } = staggerDelays(
         leaving.map((t) => t.id),
-        { windowMs: LEAVE_WINDOW_MS, maxStep: LEAVE_MAX_STEP_MS, tailMs: LEAVE_ANIM_MS },
+        { windowMs: anim.leaveWindow, maxStep: anim.leaveMaxStep, tailMs: anim.leaveAnim },
       );
       setLeavingDelays(delays);
       await sleep(totalMs);
@@ -123,7 +131,7 @@ export function Game() {
       // still finish quickly (one and one word pops in).
       const { delays, totalMs } = staggerDelays(
         shuffled.map((t) => t.id),
-        { windowMs: ENTER_WINDOW_MS, maxStep: ENTER_MAX_STEP_MS, tailMs: ENTER_ANIM_MS },
+        { windowMs: anim.enterWindow, maxStep: anim.enterMaxStep, tailMs: anim.enterAnim },
       );
       setActiveCategories(picked);
       setTiles(shuffled);
@@ -206,16 +214,27 @@ export function Game() {
     const outcome = combineTiles(tiles, aId, bId, catByName);
     if (outcome.kind === "mismatch") {
       setShakeIds(outcome.ids);
-      setTimeout(() => setShakeIds([]), SHAKE_ANIM_MS);
+      setTimeout(() => setShakeIds([]), anim.shake);
+      announce(MISMATCH);
     } else if (outcome.kind === "merged") {
       setTiles(outcome.tiles);
       const mergedId = outcome.mergedId;
-      const merged = outcome.tiles.find((t) => t.id === mergedId);
-      if (merged && isTileComplete(merged, catByName)) {
-        const isFinal = countCompleted(outcome.tiles, catByName) === activeCategories.length;
+      setMergedTileId(mergedId);
+      const mergedTile = outcome.tiles.find((t) => t.id === mergedId);
+      if (mergedTile && isTileComplete(mergedTile, catByName)) {
+        const done = countCompleted(outcome.tiles, catByName);
+        const isFinal = done === activeCategories.length;
         completion.completeCategory(mergedId, isFinal);
+        // Announced at merge time, not when the fade ends: the player acted
+        // now, and on the final category the modal that follows announces
+        // itself when it takes focus.
+        announce(categoryCompleted(mergedTile.categoryName, done, activeCategories.length));
       } else {
         completion.popMerged(mergedId);
+        if (mergedTile) {
+          const size = catByName.get(mergedTile.categoryName)?.words.length ?? 0;
+          announce(merged(mergedTile.words.length, size));
+        }
       }
     }
   }
@@ -266,7 +285,9 @@ export function Game() {
     <div
       className="game"
       ref={gameRef}
-      style={{ ...animationVars, "--header-height": `${headerHeight}px` } as JSX.CSSProperties}
+      style={
+        { ...animationVars(anim), "--header-height": `${headerHeight}px` } as JSX.CSSProperties
+      }
     >
       <Header
         headerRef={headerRef}
@@ -278,6 +299,7 @@ export function Game() {
         onThemeChange={setTheme}
         onNewGame={startGame}
       />
+      <LiveRegion announcement={announcement} />
       {showStart && <StartModal onStart={startGame} />}
       {finalModal && (
         <CompletionModal
@@ -317,6 +339,8 @@ export function Game() {
           loading={loading}
           onTileClick={handleClick}
           onCombine={combine}
+          onClearSelection={() => setSelectedId(null)}
+          mergedTileId={mergedTileId}
         />
       )}
     </div>

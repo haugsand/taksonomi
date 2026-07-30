@@ -1,0 +1,57 @@
+.crash {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  max-width: 32rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem;
+  min-height: 100dvh;
+  justify-content: center;
+  background-color: var(--bg);
+  color: var(--fg);
+}
+
+.crash__title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.crash__body {
+  margin: 0;
+  color: var(--muted-fg);
+  line-height: 1.5;
+}
+
+.crash__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.crash__button {
+  padding: 0.55rem 1.15rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background-color: var(--surface);
+  color: var(--fg);
+  font-size: 0.9rem;
+}
+
+.crash__button:hover {
+  background-color: var(--surface-hover);
+}
+
+/* Same accent tokens as the poster modals: --primary itself is only 4.47:1
+   against white, so text-bearing fills use the darker/lighter pair. */
+.crash__button--primary {
+  border-color: transparent;
+  background-color: light-dark(#4f46e5, #a5b4fc);
+  color: light-dark(#ffffff, #10131f);
+}
+
+.crash__button--primary:hover {
+  background-color: light-dark(#4338ca, #c7d2fe);
+}

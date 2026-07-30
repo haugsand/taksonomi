@@ -1,3 +1,10 @@
+/* Exists only to catch keydown for the whole board (see TileGrid). Event
+   propagation follows the DOM tree, not the box tree, so `display: contents`
+   keeps the listener working while leaving .board as .game's flex child. */
+.tile-grid {
+  display: contents;
+}
+
 .board {
   width: 100%;
   padding: 0 1rem 1rem 1rem;

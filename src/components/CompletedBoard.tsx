@@ -25,7 +25,7 @@ export function CompletedBoard({ categories, rowCount, boardRef }: Props) {
 
   return (
     <>
-      <Board boardRef={boardRef}>
+      <Board boardRef={boardRef} ariaLabel="Fullførte kategorier">
         {rows.map((row, i) => (
           <div key={i} className="board__row">
             {row.map((cat) => (

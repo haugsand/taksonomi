@@ -99,4 +99,21 @@ describe("game state", () => {
       expect(localStorage.getItem("taksonomi:state:v3")).toBeNull();
     }
   });
+
+  it("survives a storage backend that throws on read", () => {
+    // A restore that throws is the one failure a player cannot escape: the same
+    // value is read again on every reload, so the game stays dead. Safari in
+    // private mode and a disabled-storage profile both throw from getItem.
+    const getItem = localStorage.getItem.bind(localStorage);
+    localStorage.getItem = () => {
+      throw new Error("storage exploded mid-read");
+    };
+
+    try {
+      expect(() => loadGameState({ groups: 2, wordsPerGroup: 2 })).not.toThrow();
+      expect(loadGameState({ groups: 2, wordsPerGroup: 2 })).toBeNull();
+    } finally {
+      localStorage.getItem = getItem;
+    }
+  });
 });

@@ -85,14 +85,32 @@
   z-index: 5;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .tile--enter,
-  .tile--leave,
-  .tile--fadeout,
-  .tile--merged,
-  .tile--shake {
-    animation-duration: 0.01ms;
-    animation-delay: 0ms !important;
+/* No reduced-motion duration overrides live here on purpose. Durations come
+   from the --tile-*-duration variables, which Game.tsx already resolves for the
+   current motion preference (see `timings()` in constants.ts) so the JS timers
+   and the CSS stay in step. Overriding a duration here would desynchronise them
+   again — the bug where a completed category vanished instantly but the board
+   stayed frozen for the full 3s fade.
+
+   Switching *which* animation plays is still CSS's call: see .tile--shake
+   further down, where the mismatch shake becomes a colour flash — a shake is
+   motion but a colour change is not, and removing it outright would leave
+   reduced-motion players with no mismatch feedback on the board at all. */
+
+/* Mismatch feedback without motion: a red wash that fades back out. */
+@keyframes tile-flag {
+  0%,
+  100% {
+    background-color: light-dark(
+      oklch(var(--background-luminance-light) var(--background-chroma-light) var(--group-hue, 0)),
+      oklch(var(--background-luminance-dark) var(--background-chroma-dark) var(--group-hue, 0))
+    );
+    outline-color: transparent;
+  }
+  20%,
+  70% {
+    background-color: light-dark(oklch(0.85 0.11 25), oklch(0.42 0.13 25));
+    outline-color: light-dark(oklch(0.5 0.19 25), oklch(0.75 0.17 25));
   }
 }
 
@@ -158,8 +176,21 @@
   opacity: 0.5;
 }
 
+/* The outline box gives the reduced-motion flash something to tint; it is
+   transparent otherwise, so it costs nothing during a normal shake. */
 .tile--shake {
   animation: tile-shake var(--tile-shake-duration);
+  outline: 2px solid transparent;
+  outline-offset: 1px;
+}
+
+/* Must come after the shorthand above: `animation: tile-shake …` would
+   otherwise reset animation-name back and undo the swap. */
+@media (prefers-reduced-motion: reduce) {
+  .tile--shake {
+    animation-name: tile-flag;
+    animation-fill-mode: both;
+  }
 }
 
 .tile__progress {
