@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { MISMATCH, categoryCompleted, completedTileLabel, merged, tileLabel } from "./announce";
+import {
+  MISMATCH,
+  categoryCompleted,
+  completedTileLabel,
+  gameCompleted,
+  merged,
+  tileLabel,
+} from "./announce";
 
 const CATEGORY = "Kjemiske grunnstoffer";
 
@@ -49,5 +56,21 @@ describe("completedTileLabel", () => {
     expect(completedTileLabel(CATEGORY, ["hydrogen", "helium"])).toBe(
       `${CATEGORY}, fullført: hydrogen, helium.`,
     );
+  });
+});
+
+describe("gameCompleted", () => {
+  it("speaks the time, which nothing else ever did", () => {
+    // The completion modal used to announce itself by taking focus, and even
+    // then it never said how long the run took.
+    expect(gameCompleted(15, "6:41")).toBe("Fullført! Alle 15 kategorier løst på 6:41.");
+  });
+
+  it("leaves the time out for a free game, which has none", () => {
+    expect(gameCompleted(20)).toBe("Fullført! Alle 20 kategorier løst.");
+  });
+
+  it("names no category, like everything else here", () => {
+    expect(gameCompleted(15, "6:41")).not.toContain(CATEGORY);
   });
 });

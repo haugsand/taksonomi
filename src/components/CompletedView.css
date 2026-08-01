@@ -1,0 +1,115 @@
+.completed {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.completed__hero {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: clamp(1rem, 5vh, 2rem) 1rem 0.75rem;
+  text-align: center;
+}
+
+.completed__headline {
+  margin: 0;
+  font-size: clamp(2.4rem, 13vw, 3.1rem);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Focused programmatically when the result appears, never by tabbing to it —
+   so it takes focus without joining the tab order. */
+.completed__headline:focus {
+  outline: none;
+}
+
+.completed__headline:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.completed__meta {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted-fg);
+}
+
+.completed__share {
+  padding-top: 0.6rem;
+}
+
+.share-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1.05rem;
+  border-radius: 999px;
+  /* Darker/lighter than --primary so the label clears 4.5:1 in both themes.
+     See primary-accent-contrast. */
+  background-color: light-dark(#4f46e5, #a5b4fc);
+  color: light-dark(#ffffff, #10131f);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition:
+    filter 0.12s ease,
+    transform 0.12s ease;
+}
+
+.share-button:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+.share-button:active {
+  transform: none;
+}
+
+/* Sized in em so it tracks the label rather than needing its own scale. */
+.share-button__icon {
+  flex: none;
+  width: 1.05em;
+  height: 1.05em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* The categories arrive after the result, not with it — see Game.tsx. The
+   duration comes from --reveal-duration so the CSS and the JS timer that
+   schedules this cannot disagree, and so reduced motion shortens both at once.
+   See constants.ts. */
+@keyframes completed-categories-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.completed__categories {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  animation: completed-categories-in var(--reveal-duration) ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .share-button {
+    transition: none;
+  }
+  .share-button:hover {
+    transform: none;
+  }
+}

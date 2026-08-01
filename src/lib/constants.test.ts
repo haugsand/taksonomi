@@ -15,6 +15,7 @@ const DURATION_KEYS: Record<keyof Timings, boolean> = {
   shake: true,
   fadeout: true,
   fadeScale: false,
+  reveal: true,
 };
 
 const durations = (t: Timings) =>
@@ -73,6 +74,7 @@ describe("animationVars", () => {
   it("exposes every timing the stylesheet reads", () => {
     const vars = animationVars(timings(false));
     expect(Object.keys(vars).sort()).toEqual([
+      "--reveal-duration",
       "--tile-enter-duration",
       "--tile-fade-scale",
       "--tile-fadeout-duration",

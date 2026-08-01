@@ -8,7 +8,14 @@ import { assignRows, groupIntoRows } from "@/lib/layout";
 import { clearGame, loadGame, saveGame, type Mode, type Size } from "@/lib/storage";
 import { loadDailyResults, saveDailyResult, type DailyResults } from "@/lib/dailyStorage";
 import { dayKey, layoutRng } from "@/lib/daily";
-import { elapsedMs, IDLE_TIMER, pauseTimer, startTimer, type Timer } from "@/lib/timer";
+import {
+  elapsedMs,
+  formatDuration,
+  IDLE_TIMER,
+  pauseTimer,
+  startTimer,
+  type Timer,
+} from "@/lib/timer";
 import { fetchDailyGame } from "@/lib/api";
 import { useTheme } from "@/hooks/useTheme";
 import { useGameSource } from "@/hooks/useGameSource";
@@ -18,14 +25,13 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useAnnouncer } from "@/hooks/useAnnouncer";
 import { useTimerDisplay } from "@/hooks/useTimerDisplay";
 import { usePageVisible } from "@/hooks/usePageVisible";
-import { MISMATCH, categoryCompleted, merged } from "@/lib/announce";
+import { MISMATCH, categoryCompleted, gameCompleted, merged } from "@/lib/announce";
 import { PREFETCH_REFILL_MS, animationVars, timings } from "@/lib/constants";
 import type { GameSize } from "@/lib/sizes";
 import { Header } from "./Header";
 import { LiveRegion } from "./LiveRegion";
 import { TileGrid } from "./TileGrid";
-import { CompletedBoard } from "./CompletedBoard";
-import { CompletionModal } from "./CompletionModal";
+import { CompletedView } from "./CompletedView";
 import { StartModal, type RunningGame } from "./StartModal";
 import "./Game.css";
 
@@ -70,8 +76,12 @@ export function Game() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [enterDelays, setEnterDelays] = useState<Map<string, number> | null>(null);
   const [leavingDelays, setLeavingDelays] = useState<Map<string, number> | null>(null);
-  const [endBoardVisible, setEndBoardVisible] = useState(false);
-  const [finalModal, setFinalModal] = useState(false);
+  // The finished game arrives in two beats: the result takes over the empty
+  // board, then the solved categories fill in under it. Two states rather than
+  // one because they are a sequence — but unlike the flags they replace, they
+  // only ever move forwards together and cannot contradict each other.
+  const [resultShown, setResultShown] = useState(false);
+  const [categoriesShown, setCategoriesShown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   // Height of the fixed header, reserved as padding-top on .game so the board
   // still starts below it. Tracked live so wrapping / orientation changes keep
@@ -90,7 +100,7 @@ export function Game() {
   // Owns the post-merge pop / fade-out animation lifecycle.
   const completion = useTileCompletion({
     onHide: (id) => setTiles((ts) => ts.map((t) => (t.id === id ? { ...t, hidden: true } : t))),
-    onFinal: () => setFinalModal(true),
+    onFinal: () => setResultShown(true),
     timings: anim,
   });
 
@@ -117,9 +127,10 @@ export function Game() {
     setEnterDelays(null);
     setSelectedId(null);
     setMergedTileId(null);
-    setFinalModal(false);
+    setResultShown(false);
+    setCategoriesShown(false);
+    announcedRef.current = false;
     completion.reset();
-    setEndBoardVisible(false);
 
     // Start fetching right away — often instant from the prefetch cache — so the
     // request runs in parallel with the exit animation below.
@@ -231,7 +242,12 @@ export function Game() {
     const alreadyDone =
       saved.activeCategories.length > 0 &&
       countCompleted(saved.tiles, savedCatByName) === saved.activeCategories.length;
-    if (alreadyDone) setEndBoardVisible(true);
+    // A restored finished game has no animation left to play, so it skips
+    // straight past both beats.
+    if (alreadyDone) {
+      setResultShown(true);
+      setCategoriesShown(true);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -264,8 +280,32 @@ export function Game() {
     setTimer((t) => (timerRunning ? startTimer(t) : pauseTimer(t)));
   }, [timerRunning]);
 
+  // Second beat: the solved categories fill in under the result, so the win
+  // registers before the board repopulates. A restored finished game has both
+  // beats already done and never reaches this.
+  useEffect(() => {
+    if (!resultShown || categoriesShown) return;
+    const id = setTimeout(() => setCategoriesShown(true), anim.reveal);
+    return () => clearTimeout(id);
+  }, [resultShown, categoriesShown, anim.reveal]);
+
+  // Say it out loud. The modal this replaces announced itself by taking focus;
+  // with no modal, nothing would tell a screen reader the game was won — and
+  // the time was never spoken at all, only "15 av 15 kategorier".
+  const announcedRef = useRef(false);
+  useEffect(() => {
+    if (!resultShown || announcedRef.current) return;
+    announcedRef.current = true;
+    announce(
+      gameCompleted(
+        activeCategories.length,
+        finalMs === null ? undefined : formatDuration(finalMs),
+      ),
+    );
+  }, [resultShown, activeCategories.length, finalMs, announce]);
+
   // Record the finished time once, when the last category is solved — not when
-  // the completion sheet appears, which is a fade-out later.
+  // the result appears, which is a fade-out later.
   const recordedRef = useRef<string | null>(null);
   useEffect(() => {
     if (!done || mode !== "daily" || dailyDate === null) return;
@@ -328,7 +368,7 @@ export function Game() {
   }
 
   function handleClick(id: string) {
-    if (loading || finalModal || menuOpen || done) return;
+    if (loading || resultShown || menuOpen || done) return;
     const tile = tiles.find((t) => t.id === id);
     if (!tile || isTileComplete(tile, catByName)) return;
     if (selectedId === null) {
@@ -345,7 +385,7 @@ export function Game() {
   // changes) and on orientation change — not on ordinary viewport resizes.
   // headerHeight is included so the first measurement corrects once the fixed
   // header's height settles; it stays constant across viewport resizes.
-  const { boardRef, rowCount } = useRowCount([activeCategories, headerHeight]);
+  const { boardRef, rowCount } = useRowCount([activeCategories, headerHeight, categoriesShown]);
 
   // Assign tiles to rows once we know how many rows fit, and re-assign
   // whenever that count changes (a new game, or an orientation change where the
@@ -415,25 +455,6 @@ export function Game() {
           onClose={() => setMenuOpen(false)}
         />
       )}
-      {finalModal && (
-        <CompletionModal
-          mode={mode}
-          groups={groupCount}
-          wordsPerGroup={wordsPerGroup}
-          categoryCount={activeCategories.length}
-          dailyResults={dailyResults}
-          elapsedMs={finalMs ?? undefined}
-          date={dailyDate ?? undefined}
-          onShowAll={() => {
-            setFinalModal(false);
-            setEndBoardVisible(true);
-          }}
-          onStart={(nextMode, s) => {
-            setFinalModal(false);
-            startGame(nextMode, s);
-          }}
-        />
-      )}
       {error && (
         <div className="game__status game__status--error" role="alert">
           <span>{error}</span>
@@ -442,8 +463,17 @@ export function Game() {
           </button>
         </div>
       )}
-      {endBoardVisible ? (
-        <CompletedBoard categories={activeCategories} rowCount={rowCount} boardRef={boardRef} />
+      {resultShown ? (
+        <CompletedView
+          categories={activeCategories}
+          rowCount={rowCount}
+          boardRef={boardRef}
+          groups={groupCount}
+          wordsPerGroup={wordsPerGroup}
+          categoriesShown={categoriesShown}
+          elapsedMs={mode === "daily" ? (finalMs ?? undefined) : undefined}
+          date={mode === "daily" ? (dailyDate ?? undefined) : undefined}
+        />
       ) : (
         <TileGrid
           rows={rows}

@@ -112,6 +112,20 @@ startmodalen åpnes — modalens backdrop er ugjennomsiktig, så det er ingentin
 tenke på mens den er oppe. Den lagres alltid pauset: å lagre `runningSince` som
 det står ville telt hvert minutt fanen var lukket.
 
+Fullført spill er ingen modal. Det var det, og modalen gjorde to jobber på én
+gang: den _markerte øyeblikket_, som er forbigående, og _huset resultatet_, som
+må vare. Delingsknappen lå i den forbigående, så å lukke modalen for å se på
+brettet kastet den bort for godt. Nå blir brettet til resultatet
+([CompletedView](src/components/CompletedView.tsx)), og kategoriene fyller inn
+under det ett slag senere — `reveal` i
+[constants.ts](src/lib/constants.ts), som både JS-timeren og CSS-en leser, så de
+ikke kan komme i utakt.
+
+Uten en modal er det heller ingenting som tar fokus eller annonserer seg selv.
+Derfor flyttes fokus bevisst til resultatet, og `gameCompleted` i
+[announce.ts](src/lib/announce.ts) sier fra — den sier også tiden, som ingenting
+gjorde før.
+
 Delingsteksten ([src/lib/share.ts](src/lib/share.ts)) får aldri se brettet — bare
 størrelse, dato og tid. Det er samme regel som styrer `announce.ts`: den som
 deler først skal ikke røpe dagen for alle andre.

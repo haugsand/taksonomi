@@ -27,6 +27,19 @@ export function categoryCompleted(
 }
 
 /**
+ * Announced when the last category falls and the result takes over the board.
+ *
+ * This used to be handled by the completion modal announcing itself as it took
+ * focus. There is no modal any more, so without this a screen reader hears the
+ * last category being solved and then nothing — and the time, which is the
+ * whole point of the daily challenge, was never spoken at all.
+ */
+export function gameCompleted(categoryCount: number, duration?: string): string {
+  const solved = `Fullført! Alle ${categoryCount} kategorier løst`;
+  return duration ? `${solved} på ${duration}.` : `${solved}.`;
+}
+
+/**
  * Accessible name for a tile.
  *
  * A single-word tile returns null: its visible text is already a perfect label,

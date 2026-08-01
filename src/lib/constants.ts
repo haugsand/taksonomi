@@ -41,6 +41,10 @@ export type Timings = {
   fadeout: number;
   /** Scale a completed tile grows to while it fades out, in place. */
   fadeScale: number;
+  /** Pause between the result appearing and the solved categories filling in
+   *  under it, and the duration of their fade. One value for both, so the JS
+   *  timer that schedules the reveal and the CSS that animates it agree. */
+  reveal: number;
 };
 
 const FULL: Timings = {
@@ -54,6 +58,7 @@ const FULL: Timings = {
   shake: 400,
   fadeout: 3000,
   fadeScale: 5,
+  reveal: 1200,
 };
 
 /**
@@ -80,6 +85,7 @@ const REDUCED: Timings = {
   shake: 400,
   fadeout: 200,
   fadeScale: 1,
+  reveal: 200,
 };
 
 /** The timing profile for the given motion preference. */
@@ -97,6 +103,7 @@ export function animationVars(t: Timings): Record<string, string> {
     "--tile-shake-duration": `${t.shake}ms`,
     "--tile-fadeout-duration": `${t.fadeout}ms`,
     "--tile-fade-scale": `${t.fadeScale}`,
+    "--reveal-duration": `${t.reveal}ms`,
   };
 }
 
