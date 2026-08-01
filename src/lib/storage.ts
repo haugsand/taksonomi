@@ -39,6 +39,14 @@ function readRaw(key: string): string | null {
   }
 }
 
+function remove(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // ignore
+  }
+}
+
 function isStringArray(v: unknown): v is string[] {
   return Array.isArray(v) && v.every((s) => typeof s === "string");
 }
@@ -89,6 +97,10 @@ function isSavedGame(v: unknown): v is SavedGame {
  * plan.
  */
 export function loadGame(): SavedGame | null {
+  // Called from here rather than from the caller so it cannot be forgotten:
+  // there is exactly one place a game is read, and the migration has to have
+  // run before it. It is a no-op once the legacy keys are gone.
+  migrateLegacyStorage();
   try {
     const raw = readRaw(STATE_KEY);
     if (raw === null) return null;
@@ -127,9 +139,60 @@ export function saveGame(game: SavedGame): void {
 }
 
 export function clearGame(): void {
+  remove(STATE_KEY);
+}
+
+// ---------------------------------------------------------------------------
+// Migration from before the daily challenge
+//
+// Two keys were left behind by that change. Neither is read by anything now, so
+// without this they would sit in every returning player's localStorage forever
+// — and a saved 40×40 board is not small.
+// ---------------------------------------------------------------------------
+
+/** The game state as it was before `mode`, `date` and `timer` existed. */
+const LEGACY_STATE_KEY = "taksonomi:state:v3";
+/** The remembered board size. The menu now offers every size equally, so
+ *  nothing preselects one and nothing reads this. */
+const LEGACY_SIZE_KEY = "taksonomi:size:v1";
+
+function isLegacyGame(v: unknown): v is Omit<SavedGame, "mode"> {
+  if (typeof v !== "object" || v === null) return false;
+  const s = v as Record<string, unknown>;
+  return (
+    typeof s.groups === "number" &&
+    typeof s.wordsPerGroup === "number" &&
+    Array.isArray(s.activeCategories) &&
+    s.activeCategories.every(isCategory) &&
+    Array.isArray(s.tiles) &&
+    s.tiles.every(isTileData)
+  );
+}
+
+/**
+ * Carries a pre-daily game over to the current format and drops the dead keys.
+ *
+ * Exported so it can be asserted on its own, but `loadGame` calls it — a
+ * migration that depends on a caller remembering to run it first is a
+ * migration that eventually does not run.
+ *
+ * Like everything else here, it must not throw: it runs on every load, and a
+ * throw would be unrecoverable for the player.
+ */
+export function migrateLegacyStorage(): void {
   try {
-    localStorage.removeItem(STATE_KEY);
+    const raw = readRaw(LEGACY_STATE_KEY);
+    // A game saved since the upgrade is newer than anything left here, so the
+    // current key wins and the old one is simply discarded.
+    if (raw !== null && readRaw(STATE_KEY) === null) {
+      const parsed = parse(raw);
+      // Every game from before the upgrade was a free game — the daily
+      // challenge did not exist yet, and neither did a clock to restore.
+      if (isLegacyGame(parsed)) saveGame({ ...parsed, mode: "free" });
+    }
+    remove(LEGACY_STATE_KEY);
+    remove(LEGACY_SIZE_KEY);
   } catch {
-    // ignore
+    // ignore — a failed migration must not cost the player the app
   }
 }

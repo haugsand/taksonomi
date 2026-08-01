@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { clearGame, loadGame, saveGame, type SavedGame } from "./storage";
+import { clearGame, loadGame, migrateLegacyStorage, saveGame, type SavedGame } from "./storage";
 import { IDLE_TIMER } from "./timer";
 
 beforeEach(() => localStorage.clear());
@@ -98,5 +98,78 @@ describe("saved game", () => {
   it("accepts a daily game whose clock has never been started", () => {
     saveGame({ ...daily, timer: IDLE_TIMER });
     expect(loadGame()?.timer).toEqual(IDLE_TIMER);
+  });
+});
+
+describe("migration from before the daily challenge", () => {
+  const V3 = "taksonomi:state:v3";
+  const V1_SIZE = "taksonomi:size:v1";
+
+  /** The shape as it was: no mode, no date, no clock. */
+  const legacy = {
+    groups: 2,
+    wordsPerGroup: 2,
+    activeCategories: free.activeCategories,
+    tiles: free.tiles,
+  };
+
+  it("carries an unfinished game over as a free game", () => {
+    // Every game from before the upgrade predates the daily challenge, so
+    // there is only one mode it can have been.
+    localStorage.setItem(V3, JSON.stringify(legacy));
+    migrateLegacyStorage();
+
+    expect(loadGame()).toEqual({ ...legacy, mode: "free" });
+    expect(localStorage.getItem(V3)).toBeNull();
+  });
+
+  it("runs from loadGame, so it cannot be skipped by forgetting to call it", () => {
+    localStorage.setItem(V3, JSON.stringify(legacy));
+    expect(loadGame()?.mode).toBe("free");
+  });
+
+  it("keeps a newer game and discards the old one", () => {
+    // Someone who has already played since the upgrade has a current game;
+    // reviving a months-old board over it would be worse than losing it.
+    saveGame(daily);
+    localStorage.setItem(V3, JSON.stringify(legacy));
+    migrateLegacyStorage();
+
+    expect(loadGame()).toEqual(daily);
+    expect(localStorage.getItem(V3)).toBeNull();
+  });
+
+  it("discards a malformed old game without writing anything", () => {
+    localStorage.setItem(V3, "{not json");
+    migrateLegacyStorage();
+
+    expect(loadGame()).toBeNull();
+    expect(localStorage.getItem(V3)).toBeNull();
+  });
+
+  it("removes the remembered size, which nothing reads any more", () => {
+    localStorage.setItem(V1_SIZE, JSON.stringify({ groups: 25, wordsPerGroup: 25 }));
+    migrateLegacyStorage();
+    expect(localStorage.getItem(V1_SIZE)).toBeNull();
+  });
+
+  it("does nothing when there is nothing left behind", () => {
+    saveGame(free);
+    migrateLegacyStorage();
+    expect(loadGame()).toEqual(free);
+  });
+
+  it("is safe to run repeatedly", () => {
+    localStorage.setItem(V3, JSON.stringify(legacy));
+    migrateLegacyStorage();
+    migrateLegacyStorage();
+    expect(loadGame()).toEqual({ ...legacy, mode: "free" });
+  });
+
+  it("never throws, whatever the old entry holds", () => {
+    for (const raw of ["null", "[]", "42", '"x"', JSON.stringify({ groups: "two" })]) {
+      localStorage.setItem(V3, raw);
+      expect(() => migrateLegacyStorage()).not.toThrow();
+    }
   });
 });
