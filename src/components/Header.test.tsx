@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { GAME_SIZES } from "@/lib/sizes";
 import { Header } from "./Header";
 
 let root: HTMLElement;
 
-function mount(onNewGame = vi.fn()) {
+function mount(props: { elapsedMs?: number } = {}) {
+  const onOpenMenu = vi.fn();
   root = document.createElement("div");
   document.body.appendChild(root);
   act(() => {
@@ -14,21 +14,19 @@ function mount(onNewGame = vi.fn()) {
       <Header
         groupCount={15}
         wordsPerGroup={15}
-        completedCount={0}
+        completedCount={3}
         tileCount={225}
-        theme="light"
-        onThemeChange={() => {}}
-        onNewGame={onNewGame}
+        onOpenMenu={onOpenMenu}
+        {...props}
       />,
       root,
     );
   });
-  return { onNewGame };
+  return { onOpenMenu };
 }
 
-const trigger = () => root.querySelector<HTMLButtonElement>(".header__button")!;
-const menu = () => root.querySelector(".header__menu");
-const items = () => [...root.querySelectorAll<HTMLButtonElement>(".header__menu-item")];
+const button = () => root.querySelector<HTMLButtonElement>(".header__button")!;
+const clock = () => root.querySelector(".header__clock");
 
 afterEach(() => {
   if (root) {
@@ -38,79 +36,40 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
-describe("Header size popover", () => {
-  it("starts closed and reports that on the trigger", () => {
-    mount();
-    expect(menu()).toBeNull();
-    expect(trigger().getAttribute("aria-expanded")).toBe("false");
+describe("Header", () => {
+  it("opens the menu instead of a dropdown under itself", () => {
+    // The popover this replaces listed all eight sizes in a 5rem column and
+    // hand-rolled focus handling it never finished. The sheet owns that list
+    // now, and <dialog> owns the focus.
+    const { onOpenMenu } = mount();
+    expect(button().textContent).toBe("Nytt spill");
+    act(() => button().click());
+    expect(onOpenMenu).toHaveBeenCalledOnce();
   });
 
-  it("opens on click and offers every size", () => {
+  it("shows no clock during free play", () => {
     mount();
-    act(() => trigger().click());
-    expect(trigger().getAttribute("aria-expanded")).toBe("true");
-    expect(items()).toHaveLength(GAME_SIZES.length);
+    expect(clock()).toBeNull();
   });
 
-  it("does not claim ARIA menu semantics it has not implemented", () => {
-    // role="menu"/"menuitem" obliges arrow-key navigation, Home/End and
-    // typeahead. This is a plain button group, so it must not say otherwise —
-    // a screen reader would tell the user to use arrow keys that do nothing.
-    mount();
-    act(() => trigger().click());
-    expect(menu()!.getAttribute("role")).toBeNull();
-    expect(items().every((b) => !b.hasAttribute("role"))).toBe(true);
-    expect(trigger().hasAttribute("aria-haspopup")).toBe(false);
+  it("shows the clock during a daily challenge", () => {
+    // The clock's presence is the only thing marking the mode — free play has
+    // none — so a missing clock here means the player cannot tell which game
+    // they are in.
+    mount({ elapsedMs: 401_000 });
+    expect(clock()!.textContent).toContain("6:41");
   });
 
-  it("starts the chosen size and closes", () => {
-    const { onNewGame } = mount();
-    act(() => trigger().click());
-    act(() => items()[2].click());
-    expect(onNewGame).toHaveBeenCalledWith(GAME_SIZES[2]);
-    expect(menu()).toBeNull();
+  it("names the clock for a screen reader without announcing it", () => {
+    // Not a live region on purpose: a clock that speaks every second makes the
+    // board unusable. It still has to be readable on demand.
+    mount({ elapsedMs: 401_000 });
+    expect(clock()!.querySelector(".sr-only")!.textContent).toBe("Tid: ");
+    expect(clock()!.getAttribute("aria-live")).toBeNull();
   });
 
-  it("closes on Escape and hands focus back to the trigger", () => {
+  it("keeps a level-1 heading in the document once the sheet is gone", () => {
     mount();
-    act(() => trigger().click());
-    act(() => items()[0].focus());
-
-    act(() => {
-      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-    });
-
-    expect(menu()).toBeNull();
-    expect(document.activeElement).toBe(trigger());
-  });
-
-  it("closes when focus leaves it entirely", () => {
-    // Tabbing past the last item used to leave the popover open behind the
-    // page: the old handler listened for mousedown only, which never fires for
-    // a keyboard user.
-    mount();
-    const outside = document.createElement("button");
-    document.body.appendChild(outside);
-
-    act(() => trigger().click());
-    act(() => items()[0].focus());
-    act(() => {
-      items()[0].dispatchEvent(
-        new FocusEvent("focusout", { bubbles: true, relatedTarget: outside }),
-      );
-    });
-
-    expect(menu()).toBeNull();
-  });
-
-  it("stays open while focus moves between its own items", () => {
-    mount();
-    act(() => trigger().click());
-    act(() => {
-      items()[0].dispatchEvent(
-        new FocusEvent("focusout", { bubbles: true, relatedTarget: items()[1] }),
-      );
-    });
-    expect(menu()).not.toBeNull();
+    expect(root.querySelector("h1.sr-only")!.textContent).toBe("Taksonomi");
   });
 });

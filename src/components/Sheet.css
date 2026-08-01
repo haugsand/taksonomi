@@ -1,0 +1,388 @@
+/* The start and completion sheets (design D2).
+ *
+ * Three rules hold this layout together, and breaking any one of them is what
+ * the design was trying to get away from:
+ *
+ *  1. No horizontal rules separate content. Spacing does it. A heading sits
+ *     --s2 (8px) from its own content and --s5 (32px) from the block above —
+ *     four times as much air above as below. When those two drift together the
+ *     grouping collapses, and a border is the patch people reach for.
+ *  2. No uppercase headings. Weight and size carry the hierarchy.
+ *  3. Every gap comes from the scale below. A one-off value is a bug.
+ */
+
+.sheet {
+  --s1: 0.25rem;
+  --s2: 0.5rem;
+  --s3: 0.75rem;
+  --s4: 1.25rem;
+  --s5: 2rem;
+
+  /* Accent used for text-bearing fills; darker/lighter than --primary so white
+     (light) and near-black (dark) text stay above 4.5:1. See primary-accent-contrast. */
+  --sheet-accent-bg: light-dark(#4f46e5, #a5b4fc);
+  --sheet-accent-fg: light-dark(#ffffff, #10131f);
+  /* A finished challenge is filled with the board's own green, not dimmed. It
+     has to read as "done" at a glance rather than as a button you can still press. */
+  --sheet-done-bg: light-dark(oklch(0.85 0.12 150), oklch(0.62 0.14 150));
+  --sheet-done-fg: light-dark(oklch(0.25 0.06 150), oklch(0.18 0.05 150));
+
+  display: flex;
+  flex-direction: column;
+}
+
+/* The one piece of decoration: the palette compressed to five pixels. */
+.sheet__strip {
+  display: flex;
+  height: 5px;
+  flex: none;
+}
+
+.sheet__strip span {
+  flex: 1;
+  background-color: oklch(0.7 0.14 var(--h));
+}
+
+.sheet__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+  padding: var(--s4) clamp(0.85rem, 4vw, 1.15rem);
+}
+
+/* ---- the name and the theme switch share a row ---- */
+
+.sheet__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  /* On a very narrow screen the controls drop below the wordmark rather than
+     squeezing it. Nothing here overlaps at any width. */
+  flex-wrap: wrap;
+}
+
+.sheet__top-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.sheet__wordmark {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  flex: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.theme-toggle__option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.7rem;
+  color: var(--fg);
+}
+
+.theme-toggle__option[aria-pressed="true"] {
+  background-color: var(--fg);
+  color: var(--bg);
+}
+
+/* ---- blocks: date, free play, how to play. All at the same level. ---- */
+
+.sheet__block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+
+.sheet__heading {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.sheet__desc {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--muted-fg);
+}
+
+.sheet__sizes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1);
+  padding-top: var(--s1);
+}
+
+.size-chip {
+  padding: 0.28rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  background-color: var(--bg);
+  color: var(--fg);
+  white-space: nowrap;
+  transition:
+    transform 0.1s ease,
+    border-color 0.1s ease;
+}
+
+.size-chip:hover {
+  transform: translateY(-1px);
+  border-color: var(--ring);
+}
+
+.size-chip--free {
+  background-color: var(--muted);
+}
+
+.size-chip--done {
+  background-color: var(--sheet-done-bg);
+  border-color: transparent;
+  color: var(--sheet-done-fg);
+  font-weight: 500;
+}
+
+/* The game you are in the middle of, marked the same way in both lists. */
+.size-chip--current {
+  border-color: var(--ring);
+  border-width: 2px;
+  padding: 0.23rem 0.5rem;
+  font-weight: 700;
+}
+
+.sheet__rules {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+}
+
+.sheet__rules li {
+  display: flex;
+  gap: 0.45rem;
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: var(--muted-fg);
+}
+
+/* A drawn disc rather than the "•" glyph: its size and vertical position are
+   then ours rather than the font's, and it stays put if the face ever changes.
+   `flex: none` gives the hanging indent a wrapped line needs. */
+.sheet__rules li::before {
+  content: "";
+  flex: none;
+  width: 0.3rem;
+  height: 0.3rem;
+  margin-top: 0.45em;
+  border-radius: 50%;
+  background-color: currentColor;
+  opacity: 0.65;
+}
+
+/* ---- the worked example, under the rules it illustrates ---- */
+
+/* --s1 here, not --s3: the block's own gap already contributes --s2, so this
+   lands 12px below the last rule. Against the 32px between blocks that reads
+   as "part of the instructions" rather than a fourth, unlabelled block. */
+.sheet__samples {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin-top: var(--s1);
+}
+
+.sheet__sample {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s1);
+}
+
+/* --bg, not the board's tile colour: on the board a plain tile sits on --bg, but
+   here it sits on the sheet's --surface, which is the same value — so the pill
+   had no edges at all. The size chips above solve it the same way. */
+.sheet__sample-word {
+  padding: 0.26rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  background-color: var(--bg);
+}
+
+.sheet__sample-word--merged {
+  background-color: light-dark(oklch(0.9 0.09 var(--h)), oklch(0.32 0.16 var(--h)));
+  color: light-dark(oklch(0.22 0.04 var(--h)), oklch(0.96 0.03 var(--h)));
+}
+
+/* Not "→": the rules directly above already use that arrow as a bullet, and the
+   same glyph doing two jobs a line apart reads as a list item that lost its text. */
+.sheet__sample-becomes {
+  padding-inline: 0.2rem;
+  font-size: 0.8rem;
+  color: var(--muted-fg);
+}
+
+/* ---- resume: shown only when the menu is opened mid-game ---- */
+
+.sheet__resume {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s3);
+  border: 2px solid var(--ring);
+  border-radius: 10px;
+}
+
+.sheet__resume-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s2);
+}
+
+.sheet__resume-what {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.sheet__note {
+  font-size: 0.7rem;
+  line-height: 1.35;
+  color: var(--muted-fg);
+}
+
+.sheet__clock {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+/* Without the word "pauset" a frozen clock reads as a hung one. */
+.sheet__paused {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--muted-fg);
+}
+
+/* ---- actions ---- */
+
+.sheet__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+
+.sheet__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1.05rem;
+  border-radius: 999px;
+  background-color: var(--sheet-accent-bg);
+  color: var(--sheet-accent-fg);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: center;
+  transition:
+    filter 0.12s ease,
+    transform 0.12s ease;
+}
+
+/* Sized in em so it tracks the label rather than needing its own scale. */
+.sheet__icon {
+  flex: none;
+  width: 1.05em;
+  height: 1.05em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sheet__action:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+.sheet__action:active {
+  transform: none;
+}
+
+.sheet__action--quiet {
+  background-color: var(--muted);
+  color: var(--fg);
+  border: 1px solid var(--border);
+}
+
+/* In the flow, next to the theme switch — not absolutely positioned. A modal
+   <dialog> is itself `position: fixed`, so an absolute close button anchored to
+   it landed on top of the theme switch instead of beside it. */
+.sheet__close {
+  flex: none;
+  width: 1.9rem;
+  height: 1.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background-color: var(--bg);
+  color: var(--fg);
+  font-size: 0.85rem;
+}
+
+.sheet__close:hover {
+  background-color: var(--surface-hover);
+}
+
+/* ---- completion ---- */
+
+.sheet__time {
+  font-size: 2.6rem;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 0.95;
+  font-variant-numeric: tabular-nums;
+}
+
+.sheet__share-preview {
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.66rem;
+  line-height: 1.6;
+  color: var(--muted-fg);
+  white-space: pre-wrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .size-chip,
+  .sheet__action {
+    transition: none;
+  }
+  .size-chip:hover,
+  .sheet__action:hover {
+    transform: none;
+  }
+}

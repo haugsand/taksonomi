@@ -1,119 +1,102 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import {
-  DEFAULT_SIZE,
-  clearGameState,
-  loadGameState,
-  loadSize,
-  saveGameState,
-  saveSize,
-  type GameState,
-} from "./storage";
+import { clearGame, loadGame, saveGame, type SavedGame } from "./storage";
+import { IDLE_TIMER } from "./timer";
 
 beforeEach(() => localStorage.clear());
 
-describe("size", () => {
-  it("returns the default when nothing is stored", () => {
-    expect(loadSize()).toEqual(DEFAULT_SIZE);
+const KEY = "taksonomi:state:v4";
+
+const free: SavedGame = {
+  mode: "free",
+  groups: 2,
+  wordsPerGroup: 2,
+  activeCategories: [
+    { name: "A", words: ["a1", "a2"] },
+    { name: "B", words: ["b1", "b2"] },
+  ],
+  tiles: [{ id: "A::a1", words: ["a1"], categoryName: "A" }],
+};
+
+const daily: SavedGame = {
+  ...free,
+  mode: "daily",
+  date: "2026-07-30",
+  timer: { accumulatedMs: 4000, runningSince: null },
+};
+
+describe("saved game", () => {
+  it("returns null when nothing is stored", () => {
+    expect(loadGame()).toBeNull();
   });
 
-  it("round-trips a saved size", () => {
-    saveSize({ groups: 25, wordsPerGroup: 25 });
-    expect(loadSize()).toEqual({ groups: 25, wordsPerGroup: 25 });
+  it("round-trips a free game", () => {
+    saveGame(free);
+    expect(loadGame()).toEqual(free);
   });
 
-  it("falls back to the default for malformed data", () => {
-    localStorage.setItem("taksonomi:size:v1", "{not json");
-    expect(loadSize()).toEqual(DEFAULT_SIZE);
+  it("round-trips a daily game with its date and clock", () => {
+    saveGame(daily);
+    expect(loadGame()).toEqual(daily);
   });
 
-  it("falls back to the default for the wrong shape", () => {
-    localStorage.setItem("taksonomi:size:v1", JSON.stringify({ groups: "a" }));
-    expect(loadSize()).toEqual(DEFAULT_SIZE);
+  it("clears", () => {
+    saveGame(free);
+    clearGame();
+    expect(loadGame()).toBeNull();
   });
 
-  it("falls back to the default for a size the UI does not offer", () => {
-    // The API only accepts GAME_SIZES, so restoring 20x25 would leave the game
-    // stuck on an error it could never retry out of.
-    localStorage.setItem("taksonomi:size:v1", JSON.stringify({ groups: 20, wordsPerGroup: 25 }));
-    expect(loadSize()).toEqual(DEFAULT_SIZE);
-  });
-});
+  it("banks a running clock before writing, so a closed tab costs nothing", () => {
+    // Storing runningSince as-is would count every minute the tab spent shut:
+    // reopening tomorrow would show an hours-long run. What lands in storage is
+    // always paused, holding only time that was actually played.
+    const running = { ...daily, timer: { accumulatedMs: 1000, runningSince: Date.now() - 5000 } };
+    saveGame(running);
 
-describe("game state", () => {
-  const state: GameState = {
-    groups: 2,
-    wordsPerGroup: 2,
-    activeCategories: [
-      { name: "a", words: ["a1", "a2"] },
-      { name: "b", words: ["b1", "b2"] },
-    ],
-    tiles: [{ id: "t", words: ["a1"], categoryName: "a" }],
-  };
-
-  it("round-trips when the size matches", () => {
-    saveGameState(state);
-    expect(loadGameState({ groups: 2, wordsPerGroup: 2 })).toEqual(state);
+    const loaded = loadGame();
+    expect(loaded?.timer?.runningSince).toBeNull();
+    expect(loaded?.timer?.accumulatedMs).toBeGreaterThanOrEqual(6000);
   });
 
-  it("returns null when the requested size differs", () => {
-    saveGameState(state);
-    expect(loadGameState({ groups: 3, wordsPerGroup: 2 })).toBeNull();
-    expect(loadGameState({ groups: 2, wordsPerGroup: 5 })).toBeNull();
+  describe("rejects anything the board could not render", () => {
+    it("drops malformed JSON", () => {
+      localStorage.setItem(KEY, "{not json");
+      expect(loadGame()).toBeNull();
+      expect(localStorage.getItem(KEY)).toBeNull();
+    });
+
+    it("drops an unknown mode", () => {
+      localStorage.setItem(KEY, JSON.stringify({ ...free, mode: "weekly" }));
+      expect(loadGame()).toBeNull();
+    });
+
+    it("drops a daily game missing its date", () => {
+      const { date: _date, ...noDate } = daily;
+      localStorage.setItem(KEY, JSON.stringify(noDate));
+      expect(loadGame()).toBeNull();
+    });
+
+    it("drops a daily game missing its clock", () => {
+      const { timer: _timer, ...noTimer } = daily;
+      localStorage.setItem(KEY, JSON.stringify(noTimer));
+      expect(loadGame()).toBeNull();
+    });
+
+    it("drops a tile that is missing fields Tile.tsx reads", () => {
+      localStorage.setItem(KEY, JSON.stringify({ ...free, tiles: [{ id: "x" }] }));
+      expect(loadGame()).toBeNull();
+    });
+
+    it("never throws, whatever is in there", () => {
+      for (const raw of ["null", "[]", '"a string"', "42", JSON.stringify({ mode: "free" })]) {
+        localStorage.setItem(KEY, raw);
+        expect(() => loadGame()).not.toThrow();
+        expect(loadGame()).toBeNull();
+      }
+    });
   });
 
-  it("returns null when nothing is saved", () => {
-    expect(loadGameState({ groups: 2, wordsPerGroup: 2 })).toBeNull();
-  });
-
-  it("clears a saved game", () => {
-    saveGameState(state);
-    clearGameState();
-    expect(loadGameState({ groups: 2, wordsPerGroup: 2 })).toBeNull();
-  });
-
-  it("keeps a game of another size so switching back restores it", () => {
-    saveGameState(state);
-    expect(loadGameState({ groups: 3, wordsPerGroup: 2 })).toBeNull();
-    expect(loadGameState({ groups: 2, wordsPerGroup: 2 })).toEqual(state);
-  });
-
-  it("rejects and discards a malformed state instead of returning it", () => {
-    // Each of these renders fine in the old shape check but throws in Tile.tsx,
-    // and would keep throwing on every reload while it stayed in storage.
-    const malformed = [
-      { ...state, tiles: [{ id: "t", categoryName: "a" }] }, // no words
-      { ...state, tiles: [{ id: "t", categoryName: "a", words: "a1" }] }, // words not an array
-      { ...state, tiles: [{ id: "t", categoryName: "a", words: [1, 2] }] }, // words not strings
-      { ...state, tiles: [null] },
-      { ...state, activeCategories: [{ name: "a" }, { name: "b" }] }, // no words
-      { ...state, activeCategories: "nope" },
-      "{not json",
-    ];
-
-    for (const bad of malformed) {
-      localStorage.setItem(
-        "taksonomi:state:v3",
-        typeof bad === "string" ? bad : JSON.stringify(bad),
-      );
-      expect(loadGameState({ groups: 2, wordsPerGroup: 2 })).toBeNull();
-      expect(localStorage.getItem("taksonomi:state:v3")).toBeNull();
-    }
-  });
-
-  it("survives a storage backend that throws on read", () => {
-    // A restore that throws is the one failure a player cannot escape: the same
-    // value is read again on every reload, so the game stays dead. Safari in
-    // private mode and a disabled-storage profile both throw from getItem.
-    const getItem = localStorage.getItem.bind(localStorage);
-    localStorage.getItem = () => {
-      throw new Error("storage exploded mid-read");
-    };
-
-    try {
-      expect(() => loadGameState({ groups: 2, wordsPerGroup: 2 })).not.toThrow();
-      expect(loadGameState({ groups: 2, wordsPerGroup: 2 })).toBeNull();
-    } finally {
-      localStorage.getItem = getItem;
-    }
+  it("accepts a daily game whose clock has never been started", () => {
+    saveGame({ ...daily, timer: IDLE_TIMER });
+    expect(loadGame()?.timer).toEqual(IDLE_TIMER);
   });
 });

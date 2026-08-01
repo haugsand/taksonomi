@@ -24,8 +24,10 @@ const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   `script-src 'self' '${THEME_SCRIPT_HASH}'`,
   "style-src 'self' 'unsafe-inline'",
-  // data: covers the inline SVG arrow in PosterModal.css.
-  "img-src 'self' data:",
+  // No data: — the only data URI was the inline SVG arrow in the old poster
+  // modal's stylesheet, and that stylesheet is gone. Nothing in the app loads
+  // an image at all now, so the allowance would be pure attack surface.
+  "img-src 'self'",
   "font-src 'self'",
   "connect-src 'self'",
   "object-src 'none'",

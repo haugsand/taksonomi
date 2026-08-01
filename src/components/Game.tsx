@@ -5,14 +5,19 @@ import { shuffle, sleep } from "@/lib/util";
 import { staggerDelays } from "@/lib/animation";
 import { buildInitialTiles, combineTiles, countCompleted, isTileComplete } from "@/lib/tiles";
 import { assignRows, groupIntoRows } from "@/lib/layout";
-import { clearGameState, loadGameState, saveGameState } from "@/lib/storage";
+import { clearGame, loadGame, saveGame, type Mode, type Size } from "@/lib/storage";
+import { loadDailyResults, saveDailyResult, type DailyResults } from "@/lib/dailyStorage";
+import { dayKey, layoutRng } from "@/lib/daily";
+import { elapsedMs, IDLE_TIMER, pauseTimer, startTimer, type Timer } from "@/lib/timer";
+import { fetchDailyGame } from "@/lib/api";
 import { useTheme } from "@/hooks/useTheme";
-import { usePersistentSize } from "@/hooks/usePersistentSize";
 import { useGameSource } from "@/hooks/useGameSource";
 import { useRowCount } from "@/hooks/useRowCount";
 import { useTileCompletion } from "@/hooks/useTileCompletion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useAnnouncer } from "@/hooks/useAnnouncer";
+import { useTimerDisplay } from "@/hooks/useTimerDisplay";
+import { usePageVisible } from "@/hooks/usePageVisible";
 import { MISMATCH, categoryCompleted, merged } from "@/lib/announce";
 import { PREFETCH_REFILL_MS, animationVars, timings } from "@/lib/constants";
 import type { GameSize } from "@/lib/sizes";
@@ -21,12 +26,12 @@ import { LiveRegion } from "./LiveRegion";
 import { TileGrid } from "./TileGrid";
 import { CompletedBoard } from "./CompletedBoard";
 import { CompletionModal } from "./CompletionModal";
-import { StartModal } from "./StartModal";
+import { StartModal, type RunningGame } from "./StartModal";
 import "./Game.css";
 
+const FALLBACK_SIZE: Size = { groups: 15, wordsPerGroup: 15 };
+
 export function Game() {
-  const [size, setSize] = usePersistentSize();
-  const { groups: groupCount, wordsPerGroup } = size;
   const [theme, setTheme] = useTheme();
   const { getGame, prefetchAll } = useGameSource();
 
@@ -38,6 +43,20 @@ export function Game() {
   // Everything the board conveys through animation and colour also has to be
   // said out loud; nothing in the core loop was reaching assistive tech.
   const [announcement, announce] = useAnnouncer();
+
+  // Which kind of game is on the board. Only ever one at a time: starting
+  // anything from the menu ends what was running, and the menu says so first.
+  const [mode, setMode] = useState<Mode>("free");
+  const [size, setSize] = useState<Size>(FALLBACK_SIZE);
+  const { groups: groupCount, wordsPerGroup } = size;
+
+  // The Oslo day the current daily board belongs to — not necessarily today,
+  // if the tab has been open across midnight.
+  const [dailyDate, setDailyDate] = useState<string | null>(null);
+  const [timer, setTimer] = useState<Timer>(IDLE_TIMER);
+  const [today, setToday] = useState(dayKey);
+  const [dailyResults, setDailyResults] = useState<DailyResults>(() => loadDailyResults(dayKey()));
+  const [finalMs, setFinalMs] = useState<number | null>(null);
 
   const [activeCategories, setActiveCategories] = useState<Category[]>([]);
   const [tiles, setTiles] = useState<TileData[]>([]);
@@ -53,13 +72,15 @@ export function Game() {
   const [leavingDelays, setLeavingDelays] = useState<Map<string, number> | null>(null);
   const [endBoardVisible, setEndBoardVisible] = useState(false);
   const [finalModal, setFinalModal] = useState(false);
-  const [showStart, setShowStart] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   // Height of the fixed header, reserved as padding-top on .game so the board
   // still starts below it. Tracked live so wrapping / orientation changes keep
   // the offset (and thus the row-count measurement) correct.
   const [headerHeight, setHeaderHeight] = useState(0);
 
-  // Always-current tiles, so reset() can read them without being in its deps.
+  const visible = usePageVisible();
+
+  // Always-current tiles, so load() can read them without being in its deps.
   const tilesRef = useRef<TileData[]>([]);
   tilesRef.current = tiles;
 
@@ -84,16 +105,13 @@ export function Game() {
     return () => observer.disconnect();
   }, []);
 
-  // True once the player has started or restored a game. While false, an absent
-  // game shows the start menu instead of auto-starting one.
-  const startedRef = useRef(false);
-
   const catByName = useMemo(
     () => new Map(activeCategories.map((c) => [c.name, c])),
     [activeCategories],
   );
 
-  async function reset() {
+  /** Fetches a board and animates the previous one out, then the new one in. */
+  async function load(nextMode: Mode, s: GameSize) {
     setLoading(true);
     setError(null);
     setEnterDelays(null);
@@ -105,7 +123,13 @@ export function Game() {
 
     // Start fetching right away — often instant from the prefetch cache — so the
     // request runs in parallel with the exit animation below.
-    const dataPromise = getGame(groupCount, wordsPerGroup);
+    const dataPromise =
+      nextMode === "daily"
+        ? fetchDailyGame(s.groups, s.wordsPerGroup)
+        : getGame(s.groups, s.wordsPerGroup).then((categories) => ({
+            date: null as string | null,
+            categories,
+          }));
 
     // Animate the previous game's tiles out (staggered, random order) instead of
     // clearing the board abruptly.
@@ -122,26 +146,37 @@ export function Game() {
     }
 
     try {
-      const picked = await dataPromise;
+      const { date, categories } = await dataPromise;
       // Clear leave markers before the new tiles render so a repeated word id
       // can't inherit the exit animation.
       setLeavingDelays(null);
-      const shuffled = shuffle(buildInitialTiles(picked));
+      // The daily board is only the same board for everyone if the opening
+      // arrangement is too — the server can be perfectly deterministic and the
+      // challenge still be unfair if every player starts from a different
+      // shuffle of the same words. See lib/daily.ts.
+      const shuffled = shuffle(
+        buildInitialTiles(categories),
+        date === null ? undefined : layoutRng(date, s.groups, s.wordsPerGroup),
+      );
       // Stagger each tile's entrance in a random order, capped so big boards
       // still finish quickly (one and one word pops in).
       const { delays, totalMs } = staggerDelays(
         shuffled.map((t) => t.id),
         { windowMs: anim.enterWindow, maxStep: anim.enterMaxStep, tailMs: anim.enterAnim },
       );
-      setActiveCategories(picked);
+      setDailyDate(date);
+      setActiveCategories(categories);
       setTiles(shuffled);
       setEnterDelays(delays);
       setExpandedIds(new Set());
       // Drop the entrance delays once the animation is done so later re-renders
       // don't replay it.
       setTimeout(() => setEnterDelays((cur) => (cur === delays ? null : cur)), totalMs);
-      // Keep every size warm for the next "new game".
-      setTimeout(prefetchAll, PREFETCH_REFILL_MS);
+      // Keep every size warm for the next "new game". Daily boards are cached at
+      // the edge and there is only one per size per day, so they are left alone —
+      // prefetching them would also put every unplayed board of the day in the
+      // network panel of anyone curious enough to look.
+      if (nextMode === "free") setTimeout(prefetchAll, PREFETCH_REFILL_MS);
     } catch (e) {
       setLeavingDelays(null);
       setActiveCategories([]);
@@ -152,46 +187,53 @@ export function Game() {
     }
   }
 
-  // Starts a game at the given size (used by the start menu, the header and the
-  // completion modal). Switching size lets the size effect below start it.
-  function startGame(s: GameSize) {
-    clearGameState();
-    startedRef.current = true;
-    setShowStart(false);
-    if (s.groups === groupCount && s.wordsPerGroup === wordsPerGroup) {
-      reset();
-    } else {
-      setSize({ groups: s.groups, wordsPerGroup: s.wordsPerGroup });
-    }
+  /** Starts a game from the menu. Whatever was running is over. */
+  function startGame(nextMode: Mode, s: GameSize) {
+    clearGame();
+    setMenuOpen(false);
+    setMode(nextMode);
+    setSize({ groups: s.groups, wordsPerGroup: s.wordsPerGroup });
+    setDailyDate(null);
+    setTimer(IDLE_TIMER);
+    setFinalMs(null);
+    recordedRef.current = null;
+    void load(nextMode, s);
   }
 
-  // On load, restore a saved game of the current size; with none, show the start
-  // menu rather than auto-starting. Once a game is under way, switching size
-  // starts a fresh game directly.
+  // On load, restore the saved game; with none, show the menu.
   useEffect(() => {
-    const saved = loadGameState(size);
-    if (saved) {
-      setActiveCategories(saved.activeCategories);
-      setTiles(saved.tiles);
-      startedRef.current = true;
-      setShowStart(false);
-      // A restored game that's already finished has no live completion
-      // animation to play (and every tile is hidden) — show the completed
-      // board right away instead of an empty one.
-      const savedCatByName = new Map(saved.activeCategories.map((c) => [c.name, c]));
-      const alreadyDone =
-        saved.activeCategories.length > 0 &&
-        countCompleted(saved.tiles, savedCatByName) === saved.activeCategories.length;
-      if (alreadyDone) setEndBoardVisible(true);
+    const saved = loadGame();
+    if (!saved) {
+      setMenuOpen(true);
       return;
     }
-    if (startedRef.current) {
-      reset();
-    } else {
-      setShowStart(true);
+    // Yesterday's challenge can't be finished today: everyone else has moved on
+    // to a new board, so the time would compare against nothing.
+    if (saved.mode === "daily" && saved.date !== today) {
+      clearGame();
+      setMenuOpen(true);
+      return;
     }
+
+    setMode(saved.mode);
+    setSize({ groups: saved.groups, wordsPerGroup: saved.wordsPerGroup });
+    setActiveCategories(saved.activeCategories);
+    setTiles(saved.tiles);
+    if (saved.mode === "daily") {
+      setDailyDate(saved.date ?? null);
+      setTimer(saved.timer ?? IDLE_TIMER);
+    }
+
+    // A restored game that's already finished has no live completion animation
+    // to play (and every tile is hidden) — show the completed board right away
+    // instead of an empty one.
+    const savedCatByName = new Map(saved.activeCategories.map((c) => [c.name, c]));
+    const alreadyDone =
+      saved.activeCategories.length > 0 &&
+      countCompleted(saved.tiles, savedCatByName) === saved.activeCategories.length;
+    if (alreadyDone) setEndBoardVisible(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groupCount, wordsPerGroup]);
+  }, []);
 
   // Warm the cache with a game of every size shortly after mount, so the first
   // "new game" of any size is instant too.
@@ -200,14 +242,60 @@ export function Game() {
     return () => clearTimeout(id);
   }, [prefetchAll]);
 
-  // Persist the current game.
+  // The day can turn over while the tab sits open; re-read it whenever the tab
+  // comes back, so the menu offers today's challenge and not yesterday's.
   useEffect(() => {
-    if (activeCategories.length === 0) return;
-    saveGameState({ activeCategories, tiles, groups: groupCount, wordsPerGroup });
-  }, [activeCategories, tiles, groupCount, wordsPerGroup]);
+    if (!visible) return;
+    const current = dayKey();
+    setToday(current);
+    setDailyResults(loadDailyResults(current));
+  }, [visible]);
 
   const completedCount = useMemo(() => countCompleted(tiles, catByName), [tiles, catByName]);
   const done = activeCategories.length > 0 && completedCount === activeCategories.length;
+
+  // The clock runs only while a daily board is actually playable. Opening the
+  // menu pauses it: the sheet covers the board completely (the dialog backdrop
+  // is opaque), so there is nothing to think about while it is up.
+  const timerRunning =
+    mode === "daily" && !done && !menuOpen && visible && !loading && tiles.length > 0;
+
+  useEffect(() => {
+    setTimer((t) => (timerRunning ? startTimer(t) : pauseTimer(t)));
+  }, [timerRunning]);
+
+  // Record the finished time once, when the last category is solved — not when
+  // the completion sheet appears, which is a fade-out later.
+  const recordedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!done || mode !== "daily" || dailyDate === null) return;
+    const key = `${dailyDate}:${groupCount}x${wordsPerGroup}`;
+    if (recordedRef.current === key) return;
+    recordedRef.current = key;
+
+    const ms = elapsedMs(pauseTimer(timer));
+    setFinalMs(ms);
+    // Only today's board counts towards today's list.
+    if (dailyDate === today) {
+      setDailyResults(saveDailyResult(dailyDate, groupCount, wordsPerGroup, ms));
+    }
+  }, [done, mode, dailyDate, groupCount, wordsPerGroup, timer, today]);
+
+  // Persist the current game.
+  useEffect(() => {
+    if (activeCategories.length === 0) return;
+    // A daily game without its date can't be validated on the way back in, so
+    // it is not written at all rather than written to be discarded.
+    if (mode === "daily" && dailyDate === null) return;
+    saveGame({
+      mode,
+      groups: groupCount,
+      wordsPerGroup,
+      activeCategories,
+      tiles,
+      ...(mode === "daily" ? { date: dailyDate ?? undefined, timer } : {}),
+    });
+  }, [mode, activeCategories, tiles, groupCount, wordsPerGroup, dailyDate, timer]);
 
   function combine(aId: string, bId: string) {
     if (done) return;
@@ -222,25 +310,25 @@ export function Game() {
       setMergedTileId(mergedId);
       const mergedTile = outcome.tiles.find((t) => t.id === mergedId);
       if (mergedTile && isTileComplete(mergedTile, catByName)) {
-        const done = countCompleted(outcome.tiles, catByName);
-        const isFinal = done === activeCategories.length;
+        const solved = countCompleted(outcome.tiles, catByName);
+        const isFinal = solved === activeCategories.length;
         completion.completeCategory(mergedId, isFinal);
         // Announced at merge time, not when the fade ends: the player acted
         // now, and on the final category the modal that follows announces
         // itself when it takes focus.
-        announce(categoryCompleted(mergedTile.categoryName, done, activeCategories.length));
+        announce(categoryCompleted(mergedTile.categoryName, solved, activeCategories.length));
       } else {
         completion.popMerged(mergedId);
         if (mergedTile) {
-          const size = catByName.get(mergedTile.categoryName)?.words.length ?? 0;
-          announce(merged(mergedTile.words.length, size));
+          const categorySize = catByName.get(mergedTile.categoryName)?.words.length ?? 0;
+          announce(merged(mergedTile.words.length, categorySize));
         }
       }
     }
   }
 
   function handleClick(id: string) {
-    if (loading || finalModal || done) return;
+    if (loading || finalModal || menuOpen || done) return;
     const tile = tiles.find((t) => t.id === id);
     if (!tile || isTileComplete(tile, catByName)) return;
     if (selectedId === null) {
@@ -281,6 +369,22 @@ export function Game() {
   const visibleTiles = useMemo(() => tiles.filter((t) => !t.hidden), [tiles]);
   const rows = useMemo(() => groupIntoRows(visibleTiles), [visibleTiles]);
 
+  const displayMs = useTimerDisplay(mode === "daily" ? timer : null);
+
+  // A finished game is not something to resume, but it is still something to go
+  // back to — so the sheet stays closable even when there is nothing to resume.
+  const running: RunningGame | null =
+    activeCategories.length > 0 && !done
+      ? {
+          mode,
+          groups: groupCount,
+          wordsPerGroup,
+          completedCount,
+          categoryCount: activeCategories.length,
+          elapsedMs: mode === "daily" ? elapsedMs(timer) : undefined,
+        }
+      : null;
+
   return (
     <div
       className="game"
@@ -295,28 +399,45 @@ export function Game() {
         wordsPerGroup={wordsPerGroup}
         completedCount={completedCount}
         tileCount={tiles.length}
-        theme={theme}
-        onThemeChange={setTheme}
-        onNewGame={startGame}
+        elapsedMs={mode === "daily" && dailyDate !== null ? displayMs : undefined}
+        onOpenMenu={() => setMenuOpen(true)}
       />
       <LiveRegion announcement={announcement} />
-      {showStart && <StartModal onStart={startGame} />}
+      {menuOpen && (
+        <StartModal
+          today={today}
+          dailyResults={dailyResults}
+          running={running}
+          dismissable={activeCategories.length > 0}
+          theme={theme}
+          onThemeChange={setTheme}
+          onStart={startGame}
+          onClose={() => setMenuOpen(false)}
+        />
+      )}
       {finalModal && (
         <CompletionModal
+          mode={mode}
+          groups={groupCount}
+          wordsPerGroup={wordsPerGroup}
+          categoryCount={activeCategories.length}
+          dailyResults={dailyResults}
+          elapsedMs={finalMs ?? undefined}
+          date={dailyDate ?? undefined}
           onShowAll={() => {
             setFinalModal(false);
             setEndBoardVisible(true);
           }}
-          onNewGame={(s) => {
+          onStart={(nextMode, s) => {
             setFinalModal(false);
-            startGame(s);
+            startGame(nextMode, s);
           }}
         />
       )}
       {error && (
         <div className="game__status game__status--error" role="alert">
           <span>{error}</span>
-          <button type="button" onClick={() => reset()}>
+          <button type="button" onClick={() => setMenuOpen(true)}>
             Prøv igjen
           </button>
         </div>

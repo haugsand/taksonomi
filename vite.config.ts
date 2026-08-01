@@ -2,18 +2,46 @@ import { defineConfig } from "vitest/config";
 import type { Connect, Plugin } from "vite";
 import preact from "@preact/preset-vite";
 import path from "node:path";
-import { newGame } from "./server/newGame";
+import { dailyGame, newGame } from "./server/newGame";
+import { memoryBoardStore } from "./server/boardStore";
 
 /**
- * Serves /api/new-game during `vite dev` and `vite preview` through the same
- * `newGame` the Worker uses, so the category data stays server-only (it never
- * enters the client bundle) and dev matches production down to the validation.
+ * Serves /api/new-game and /api/daily during `vite dev` and `vite preview`
+ * through the same functions the Worker uses, so the category data stays
+ * server-only (it never enters the client bundle) and dev matches production
+ * down to the validation.
  */
-function newGameApi(): Plugin {
+function gameApi(): Plugin {
+  // Stands in for KV, so dev exercises the freeze rather than a path around it.
+  const store = memoryBoardStore();
+
   const handler: Connect.NextHandleFunction = (req, res, next) => {
     const url = new URL(req.url ?? "", "http://localhost");
-    if (url.pathname !== "/api/new-game") return next();
+    const daily = url.pathname === "/api/daily";
+    if (!daily && url.pathname !== "/api/new-game") return next();
     res.setHeader("Content-Type", "application/json");
+
+    if (daily) {
+      dailyGame(url.searchParams, { store }).then(
+        (result) => {
+          if (!result.ok) {
+            res.statusCode = result.status;
+            res.end(JSON.stringify({ error: result.error }));
+            return;
+          }
+          res.end(JSON.stringify({ date: result.date, categories: result.categories }));
+        },
+        // dailyGame swallows storage failures, so reaching here means a real
+        // bug rather than a flaky store — surface it instead of hanging the
+        // request until the dev server is restarted.
+        (error: unknown) => {
+          res.statusCode = 500;
+          res.end(JSON.stringify({ error: String(error) }));
+        },
+      );
+      return;
+    }
+
     const result = newGame(url.searchParams);
     if (!result.ok) {
       res.statusCode = result.status;
@@ -23,7 +51,7 @@ function newGameApi(): Plugin {
     res.end(JSON.stringify({ categories: result.categories }));
   };
   return {
-    name: "new-game-api",
+    name: "game-api",
     configureServer(server) {
       server.middlewares.use(handler);
     },
@@ -34,7 +62,7 @@ function newGameApi(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [preact(), newGameApi()],
+  plugins: [preact(), gameApi()],
   resolve: {
     alias: { "@": path.resolve(__dirname, "./src") },
   },

@@ -28,7 +28,12 @@
   margin: auto;
   width: min(28rem, calc(100% - 2rem));
   max-width: none;
-  max-height: min(90vh, 40rem);
+  /* Height follows the content; the viewport is the only limit. The 40rem cap
+     this used to also carry was what forced the start sheet to scroll inside
+     itself on an ordinary desktop window, with room to spare underneath.
+     `overflow-y` stays as the last resort — a phone in landscape genuinely
+     cannot fit the sheet — but it should never be reached on a normal screen. */
+  max-height: 90vh;
   overflow-y: auto;
   padding: 0;
   background-color: var(--surface);
@@ -40,10 +45,24 @@
 }
 
 /* ::backdrop historically inherited from nothing rather than from the dialog,
-   and that is still uneven across browsers — so this colour is written out
-   instead of reaching for --default-hue (150). */
+   and that is still uneven across browsers — so the hues are written out
+   instead of reaching for --default-hue (150).
+
+   `light-dark()` is safe here even so: it reads `color-scheme`, which the
+   pre-paint script and useTheme set on <html>, and the initial value on
+   ::backdrop resolves against that root scheme rather than against an
+   uninherited custom property. A `prefers-color-scheme` media query would NOT
+   work — it follows the OS and would ignore the in-app toggle entirely. See
+   theme-light-dark-mechanism.
+
+   The dark value has to be well below the sheet's own surface (0.3). At the
+   single shared value this used to have, the modal and the backdrop were the
+   same colour in dark mode and the dialog had no edges at all.
+
+   Deliberately opaque, in both: the daily clock pauses while this is up, so the
+   board behind it must not be readable. */
 .modal::backdrop {
-  background-color: oklch(0.3 0.02 150);
+  background-color: light-dark(oklch(0.3 0.02 150), oklch(0.11 0.014 150));
   animation: modal-backdrop-in 0.22s ease both;
 }
 

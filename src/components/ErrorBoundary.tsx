@@ -1,6 +1,6 @@
 import { Component } from "preact";
 import type { ComponentChildren } from "preact";
-import { clearGameState } from "@/lib/storage";
+import { clearGame } from "@/lib/storage";
 import "./ErrorBoundary.css";
 
 type Props = { children: ComponentChildren };
@@ -12,7 +12,7 @@ type State = { failed: boolean };
  * The realistic crash here is a saved game that throws while being restored:
  * without a boundary that is a white screen, and reloading replays the same
  * throw forever. So the important control is not "try again" but "start over",
- * which clears the stored state before reloading. It calls `clearGameState`
+ * which clears the stored state before reloading. It calls `clearGame`
  * directly rather than through anything in the crashed tree.
  */
 export class ErrorBoundary extends Component<Props, State> {
@@ -50,7 +50,7 @@ export class ErrorBoundary extends Component<Props, State> {
             type="button"
             className="crash__button crash__button--primary"
             onClick={() => {
-              clearGameState();
+              clearGame();
               location.reload();
             }}
           >

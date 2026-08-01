@@ -106,8 +106,10 @@ export const PREFETCH_REFILL_MS = 800;
 
 // localStorage keys. Bump the version suffix when the stored shape changes.
 
-export const STATE_KEY = "taksonomi:state:v3";
-export const SIZE_KEY = "taksonomi:size:v1";
+/** The one game in progress, free or daily. v4 added `mode`, `date` and `timer`. */
+export const STATE_KEY = "taksonomi:state:v4";
+/** Today's finished daily challenges, by size. */
+export const DAILY_KEY = "taksonomi:daily:v1";
 /** Must match the key used by the pre-paint script in index.html. */
 export const THEME_KEY = "taksonomi:theme:v1";
 

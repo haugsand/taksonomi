@@ -42,7 +42,9 @@ sikkerhetsheaderne og www-redirecten, før deploy.
 ### Spill-API-et
 
 `/api/new-game?groups=&words=` velger tilfeldige kategorier og tilfeldige ord
-per kategori. Samme logikk kjører to steder, via delt kode:
+per kategori. `/api/daily?groups=&words=` gjør det samme, men seedet — se
+[Daglig utfordring](#daglig-utfordring). Samme logikk kjører to steder, via delt
+kode:
 
 - **prod:** Cloudflare Worker ([server/worker.ts](server/worker.ts))
 - **dev/preview:** Vite-middleware (`newGameApi()` i [vite.config.ts](vite.config.ts))
@@ -60,6 +62,59 @@ på ~80 KB fra et endepunkt som ikke kan caches.
 kategorilisten og importeres kun av server-kode, så den havner aldri i
 klient-bundelen. Klienten ([src/lib/api.ts](src/lib/api.ts)) henter kun de
 kategoriene ett spill trenger, og lagrer dem i `localStorage`.
+
+### Daglig utfordring
+
+Ett brett per størrelse per dag, likt for alle. Det hviler på to ting, og begge
+må stemme:
+
+- **Serveren trekker seedet.** `pickCategories` tar en RNG; `/api/daily` gir den
+  `boardRng(dato, groups, words)` fra [src/lib/daily.ts](src/lib/daily.ts).
+  Datoen kommer aldri fra forespørselen — en `date`-parameter ville latt hvem
+  som helst hente morgendagens brett.
+- **Klienten stokker seedet.** `shuffle` tar også en RNG, og
+  [Game.tsx](src/components/Game.tsx) gir den `layoutRng(...)`. Uten dette er
+  serveren perfekt deterministisk mens hver spiller likevel åpner på sin egen
+  arrangering av de samme ordene — og da er tiden ikke sammenlignbar.
+
+Generatoren i [src/lib/rng.ts](src/lib/rng.ts) er ren 32-bits heltallsaritmetikk
+nettopp fordi den må gi identisk sekvens i Workeren, i Vite-middlewaren og i alle
+nettlesere. `daily.test.ts` pinner de tre første tallene den gir: endrer du
+generatoren, får spillerne et annet brett enn vennene sine — og midt på dagen et
+annet brett enn de startet på.
+
+Døgnet er `Europe/Oslo`, ikke UTC og ikke brukerens sone, så alle får nytt brett
+samtidig. `/api/daily` kan derfor caches på kanten fram til midnatt (`s-maxage`),
+i motsetning til `/api/new-game` som må være `no-store`.
+
+**Brettet fryses ved første forespørsel.** Seeding alene holder ikke: seeden er
+den samme, men `pickCategories` stokker _den lista som finnes i øyeblikket_. Blir
+`categories-data.ts` deployet kl. 14, får alle som spiller etterpå et helt annet
+brett enn de som spilte før — målt på det virkelige datasettet ga én ny kategori
+null treff på samme plass av 15. Edge-cachen gjør det verre, ikke bedre: den er
+per PoP, så to spillere i hver sin by kunne endt med hvert sitt brett samme dag.
+
+Derfor skrives brettet til KV første gang noen ber om det
+([server/boardStore.ts](server/boardStore.ts)), og leses derfra siden. Brettet er
+da ikke lenger en funksjon av dataene, men en avgjort kjensgjerning. To
+forespørsler som kappløper om å være først regner ut _det samme_ brettet — samme
+seed, samme data, millisekunder fra hverandre — så dobbeltskrivingen er harmløs,
+og samme resonnement dekker KVs eventuelle konsistens.
+
+Lagringsfeil svelges med vilje: å servere et brett er bedre enn å servere en
+feil, og frysingen er en konsistensgaranti snarere enn noe svaret avhenger av.
+Prisen er at garantien degraderer stille — mistenker du det, sjekk at
+`BOARDS`-bindingen finnes. Dev-serveren bruker en minnevariant av samme
+grensesnitt, så den kjører samme kodesti og ikke en snarvei rundt den.
+
+Klokka ([src/lib/timer.ts](src/lib/timer.ts)) pauser når fanen skjules og når
+startmodalen åpnes — modalens backdrop er ugjennomsiktig, så det er ingenting å
+tenke på mens den er oppe. Den lagres alltid pauset: å lagre `runningSince` som
+det står ville telt hvert minutt fanen var lukket.
+
+Delingsteksten ([src/lib/share.ts](src/lib/share.ts)) får aldri se brettet — bare
+størrelse, dato og tid. Det er samme regel som styrer `announce.ts`: den som
+deler først skal ikke røpe dagen for alle andre.
 
 ### Sikkerhetsheadere
 
