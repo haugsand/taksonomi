@@ -2,6 +2,7 @@ import { useState } from "preact/hooks";
 import type { RefObject } from "preact";
 import type { Category } from "@/lib/types";
 import { chunkIntoRows } from "@/lib/layout";
+import { useDescriptions } from "@/hooks/useDescriptions";
 import { Board } from "./Board";
 import { Modal } from "./Modal";
 import "./CompletedBoard.css";
@@ -16,12 +17,15 @@ type Props = {
 /**
  * The finished-game board. Shows every category as a name-only chip (no words),
  * laid out across as many rows as fit the height so nothing spills below the
- * viewport. Clicking a chip opens a modal with the category's words. It does
- * NOT reuse Tile — the interaction (open a modal) is entirely different.
+ * viewport. Clicking a chip opens a modal with the category's words, each with
+ * a short description of what it is. It does NOT reuse Tile — the interaction
+ * (open a modal) is entirely different.
  */
 export function CompletedBoard({ categories, rowCount, boardRef }: Props) {
   const [selected, setSelected] = useState<Category | null>(null);
   const rows = chunkIntoRows(categories, rowCount);
+  const { load, get } = useDescriptions();
+  const descriptions = get(selected?.slug);
 
   return (
     <>
@@ -33,7 +37,14 @@ export function CompletedBoard({ categories, rowCount, boardRef }: Props) {
                 key={cat.name}
                 type="button"
                 className="completed-category"
-                onClick={() => setSelected(cat)}
+                // Hover and focus start the fetch before the click does, so the
+                // descriptions have usually landed by the time the modal opens.
+                onMouseEnter={() => load(cat.slug)}
+                onFocus={() => load(cat.slug)}
+                onClick={() => {
+                  load(cat.slug);
+                  setSelected(cat);
+                }}
               >
                 {cat.name}
               </button>
@@ -44,11 +55,18 @@ export function CompletedBoard({ categories, rowCount, boardRef }: Props) {
       {selected && (
         <Modal ariaLabel={selected.name} onClose={() => setSelected(null)}>
           <h2 className="completed-category-modal__name">{selected.name}</h2>
-          <ul className="completed-category-modal__words">
+          {/* A description list rather than a bare list: the pairing of word and
+              explanation *is* the content, and <dl> is what says so to a screen
+              reader. A word with no description renders as a lone <dt>, which is
+              valid and reads as "just this word" rather than as a gap. */}
+          <dl className="completed-category-modal__words">
             {selected.words.map((word) => (
-              <li key={word}>{word}</li>
+              <div key={word} className="completed-category-modal__word">
+                <dt>{word}</dt>
+                {descriptions?.[word] && <dd>{descriptions[word]}</dd>}
+              </div>
             ))}
-          </ul>
+          </dl>
         </Modal>
       )}
     </>

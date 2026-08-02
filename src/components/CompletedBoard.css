@@ -37,25 +37,38 @@
   font-weight: 700;
 }
 
+/* The word list used to be centred pills, which worked when a word was all
+   there was to show. A description is a line of prose, and prose set centred
+   in a narrow column is hard to read — so this stretches to the modal's width
+   and left-aligns, overriding the centring .modal__content applies. */
 .completed-category-modal__words {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.5rem;
+  align-self: stretch;
   margin: 0;
   padding: 0;
-  list-style: none;
+  text-align: left;
 }
 
-.completed-category-modal__words li {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.375rem 0.625rem;
-  border-radius: 999px;
-  font-size: 0.875rem;
-  background-color: light-dark(
-    oklch(0.92 0.02 var(--default-hue)),
-    oklch(0.3 0.04 var(--default-hue))
-  );
+.completed-category-modal__word {
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.completed-category-modal__word:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.completed-category-modal__word dt {
+  font-size: 0.9375rem;
+  font-weight: 700;
   color: light-dark(oklch(0.2 0.03 var(--default-hue)), oklch(0.96 0.03 var(--default-hue)));
+}
+
+.completed-category-modal__word dd {
+  margin: 0.125rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  /* Dimmed against the word above it: the word is the answer the player earned,
+     the description is the footnote. */
+  color: light-dark(oklch(0.45 0.02 var(--default-hue)), oklch(0.75 0.02 var(--default-hue)));
 }

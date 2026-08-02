@@ -33,7 +33,7 @@ export function pickCategories(
   const w = clampInt(wordsPerGroup, 1, MAX_WORDS_PER_GROUP);
   return shuffle(CATEGORIES, rng)
     .slice(0, g)
-    .map((c) => ({ name: c.name, words: shuffle(c.words, rng).slice(0, w) }));
+    .map((c) => ({ name: c.name, slug: c.slug, words: shuffle(c.words, rng).slice(0, w) }));
 }
 
 function clampInt(value: number, min: number, max: number): number {

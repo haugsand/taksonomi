@@ -5,6 +5,7 @@ import type { Category } from "../src/lib/types";
 export const CATEGORIES: Category[] = [
   {
     name: "Kjemiske grunnstoffer",
+    slug: "kjemiske-grunnstoffer",
     words: [
       "hydrogen",
       "helium",
@@ -50,6 +51,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Land i verden",
+    slug: "land-i-verden",
     words: [
       "Norge",
       "Sverige",
@@ -95,6 +97,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Norske byer og tettsteder",
+    slug: "norske-byer-og-tettsteder",
     words: [
       "Oslo",
       "Bergen",
@@ -140,6 +143,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Programmeringsspråk",
+    slug: "programmeringssprak",
     words: [
       "Python",
       "Java",
@@ -185,6 +189,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Bilmerker",
+    slug: "bilmerker",
     words: [
       "Toyota",
       "Volkswagen",
@@ -230,6 +235,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Verdens valutaer",
+    slug: "verdens-valutaer",
     words: [
       "krone",
       "dollar",
@@ -275,6 +281,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Språk i verden",
+    slug: "sprak-i-verden",
     words: [
       "norsk",
       "svensk",
@@ -320,6 +327,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Dansestiler",
+    slug: "dansestiler",
     words: [
       "vals",
       "wienervals",
@@ -365,6 +373,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Yrker",
+    slug: "yrker",
     words: [
       "lege",
       "sykepleier",
@@ -410,6 +419,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Musikkinstrumenter",
+    slug: "musikkinstrumenter",
     words: [
       "gitar",
       "piano",
@@ -455,6 +465,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Kroppsdeler",
+    slug: "kroppsdeler",
     words: [
       "panne",
       "tinning",
@@ -500,6 +511,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Håndverktøy",
+    slug: "handverktoy",
     words: [
       "hammer",
       "skrutrekker",
@@ -545,6 +557,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Kjøkkenredskaper",
+    slug: "kjokkenredskaper",
     words: [
       "tallerken",
       "asjett",
@@ -590,6 +603,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Klesplagg",
+    slug: "klesplagg",
     words: [
       "bukse",
       "genser",
@@ -635,6 +649,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Møbler",
+    slug: "mobler",
     words: [
       "sofa",
       "stol",
@@ -680,6 +695,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Kjøretøy",
+    slug: "kjoretoy",
     words: [
       "bil",
       "buss",
@@ -725,6 +741,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Sportsgrener",
+    slug: "sportsgrener",
     words: [
       "fotball",
       "håndball",
@@ -770,6 +787,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Følelser",
+    slug: "folelser",
     words: [
       "glede",
       "sorg",
@@ -815,6 +833,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Ville pattedyr",
+    slug: "ville-pattedyr",
     words: [
       "løve",
       "tiger",
@@ -860,6 +879,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Fugler",
+    slug: "fugler",
     words: [
       "ørn",
       "hauk",
@@ -905,6 +925,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Fisker og sjødyr",
+    slug: "fisker-og-sjodyr",
     words: [
       "laks",
       "ørret",
@@ -950,6 +971,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Insekter og småkryp",
+    slug: "insekter-og-smakryp",
     words: [
       "mygg",
       "flue",
@@ -995,6 +1017,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Trær",
+    slug: "traer",
     words: [
       "furu",
       "gran",
@@ -1040,6 +1063,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Blomster",
+    slug: "blomster",
     words: [
       "rose",
       "tulipan",
@@ -1085,6 +1109,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Grønnsaker",
+    slug: "gronnsaker",
     words: [
       "potet",
       "gulrot",
@@ -1130,6 +1155,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Frukt og bær",
+    slug: "frukt-og-baer",
     words: [
       "eple",
       "pære",
@@ -1175,6 +1201,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Krydder og urter",
+    slug: "krydder-og-urter",
     words: [
       "salt",
       "pepper",
@@ -1220,6 +1247,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Drikker",
+    slug: "drikker",
     words: [
       "vann",
       "kaffe",
@@ -1265,6 +1293,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Verdens hovedsteder",
+    slug: "verdens-hovedsteder",
     words: [
       "London",
       "Paris",
@@ -1310,6 +1339,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Hunderaser",
+    slug: "hunderaser",
     words: [
       "schäferhund",
       "labrador",
@@ -1355,6 +1385,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Katteraser",
+    slug: "katteraser",
     words: [
       "perser",
       "siameser",
@@ -1400,6 +1431,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Hesteraser",
+    slug: "hesteraser",
     words: [
       "araber",
       "fullblods",
@@ -1445,6 +1477,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Mineraler og bergarter",
+    slug: "mineraler-og-bergarter",
     words: [
       "diamant",
       "rubin",
@@ -1490,6 +1523,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Stjernebilder",
+    slug: "stjernebilder",
     words: [
       "Andromeda",
       "Pegasus",
@@ -1535,6 +1569,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Farger",
+    slug: "farger",
     words: [
       "rød",
       "blå",
@@ -1580,6 +1615,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Reptiler og amfibier",
+    slug: "reptiler-og-amfibier",
     words: [
       "krokodille",
       "alligator",
@@ -1625,6 +1661,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Dinosaurer",
+    slug: "dinosaurer",
     words: [
       "tyrannosaurus",
       "velociraptor",
@@ -1670,6 +1707,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Pastatyper",
+    slug: "pastatyper",
     words: [
       "spaghetti",
       "makaroni",
@@ -1715,6 +1753,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Gresk mytologi",
+    slug: "gresk-mytologi",
     words: [
       "Zevs",
       "Hera",
@@ -1760,6 +1799,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Norrøn mytologi",
+    slug: "norron-mytologi",
     words: [
       "Odin",
       "Tor",
@@ -1805,6 +1845,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Geometriske former og begreper",
+    slug: "geometriske-former-og-begreper",
     words: [
       "sirkel",
       "kvadrat",
@@ -1850,6 +1891,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Vær og naturfenomener",
+    slug: "vaer-og-naturfenomener",
     words: [
       "sol",
       "regn",
@@ -1895,6 +1937,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Bygninger og strukturer",
+    slug: "bygninger-og-strukturer",
     words: [
       "hus",
       "hytte",
@@ -1940,6 +1983,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Rom i huset",
+    slug: "rom-i-huset",
     words: [
       "stue",
       "kjøkken",
@@ -1985,6 +2029,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Slektskap",
+    slug: "slektskap",
     words: [
       "mor",
       "far",
@@ -2030,6 +2075,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Tidsbegreper",
+    slug: "tidsbegreper",
     words: [
       "sekund",
       "minutt",
@@ -2075,6 +2121,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Musikksjangre",
+    slug: "musikksjangre",
     words: [
       "pop",
       "rock",
@@ -2120,6 +2167,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Filmsjangre",
+    slug: "filmsjangre",
     words: [
       "action",
       "komedie",
@@ -2165,6 +2213,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Brettspill og kortspill",
+    slug: "brettspill-og-kortspill",
     words: [
       "sjakk",
       "dam",
@@ -2210,6 +2259,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "IT- og datatermer",
+    slug: "it-og-datatermer",
     words: [
       "maskinvare",
       "programvare",
@@ -2255,6 +2305,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Matretter",
+    slug: "matretter",
     words: [
       "pizza",
       "taco",
@@ -2300,6 +2351,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Bakverk og søtsaker",
+    slug: "bakverk-og-sotsaker",
     words: [
       "kake",
       "bolle",
@@ -2345,6 +2397,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Oster",
+    slug: "oster",
     words: [
       "gulost",
       "brunost",
@@ -2390,6 +2443,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Astronomiske objekter og begreper",
+    slug: "astronomiske-objekter-og-begreper",
     words: [
       "galakse",
       "stjerne",
@@ -2435,6 +2489,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Kontorrekvisita",
+    slug: "kontorrekvisita",
     words: [
       "penn",
       "blyant",
@@ -2480,6 +2535,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Smykker og edelt tilbehør",
+    slug: "smykker-og-edelt-tilbehor",
     words: [
       "ring",
       "øredobb",
@@ -2525,6 +2581,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Elver i verden",
+    slug: "elver-i-verden",
     words: [
       "Nilen",
       "Amazonas",
@@ -2570,6 +2627,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Fjell og fjellkjeder",
+    slug: "fjell-og-fjellkjeder",
     words: [
       "Everest",
       "K2",
@@ -2615,6 +2673,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Sykdommer og symptomer",
+    slug: "sykdommer-og-symptomer",
     words: [
       "feber",
       "hoste",
@@ -2660,6 +2719,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Transportinfrastruktur",
+    slug: "transportinfrastruktur",
     words: [
       "vei",
       "gate",
@@ -2705,6 +2765,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Religioner og trosretninger",
+    slug: "religioner-og-trosretninger",
     words: [
       "kristendom",
       "islam",
@@ -2750,6 +2811,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Mytiske vesener og monstre",
+    slug: "mytiske-vesener-og-monstre",
     words: [
       "drage",
       "enhjørning",
@@ -2795,6 +2857,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Akademiske fagfelt",
+    slug: "akademiske-fagfelt",
     words: [
       "matematikk",
       "fysikk",
@@ -2840,6 +2903,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Kjente malere",
+    slug: "kjente-malere",
     words: [
       "da Vinci",
       "Michelangelo",
@@ -2885,6 +2949,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Komponister",
+    slug: "komponister",
     words: [
       "Bach",
       "Beethoven",
@@ -2930,6 +2995,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Forfattere",
+    slug: "forfattere",
     words: [
       "Shakespeare",
       "Tolstoj",
@@ -2975,6 +3041,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Kjente merkevarer",
+    slug: "kjente-merkevarer",
     words: [
       "Coca-Cola",
       "Pepsi",
@@ -3020,6 +3087,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Hagearbeid og redskap",
+    slug: "hagearbeid-og-redskap",
     words: [
       "gressklipper",
       "kantklipper",
@@ -3065,6 +3133,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Bildeler",
+    slug: "bildeler",
     words: [
       "motor",
       "girkasse",
@@ -3110,6 +3179,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Rengjøring og husstell",
+    slug: "rengjoring-og-husstell",
     words: [
       "mopp",
       "bøtte",
@@ -3155,6 +3225,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Europeiske fotballklubber",
+    slug: "europeiske-fotballklubber",
     words: [
       "Real Madrid",
       "Barcelona",
@@ -3200,6 +3271,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Verdens innsjøer",
+    slug: "verdens-innsjoer",
     words: [
       "Victoriasjøen",
       "Tanganyikasjøen",
@@ -3245,6 +3317,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Verdenshav og havområder",
+    slug: "verdenshav-og-havomrader",
     words: [
       "Atlanterhavet",
       "Stillehavet",
@@ -3290,6 +3363,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Verb for bevegelse",
+    slug: "verb-for-bevegelse",
     words: [
       "gå",
       "løpe",
@@ -3335,6 +3409,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Beskrivende adjektiver",
+    slug: "beskrivende-adjektiver",
     words: [
       "stor",
       "liten",
@@ -3380,6 +3455,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Tall og mengdeord",
+    slug: "tall-og-mengdeord",
     words: [
       "en",
       "to",
@@ -3425,6 +3501,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Materialer og stoffer",
+    slug: "materialer-og-stoffer",
     words: [
       "plast",
       "betong",
@@ -3470,6 +3547,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Geografiske landformer",
+    slug: "geografiske-landformer",
     words: [
       "fjell",
       "dal",
@@ -3515,6 +3593,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Teater og opera",
+    slug: "teater-og-opera",
     words: [
       "scene",
       "kulisse",
@@ -3560,6 +3639,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Sjakkbegreper",
+    slug: "sjakkbegreper",
     words: [
       "konge",
       "dronning",
@@ -3605,6 +3685,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Indre organer og anatomi",
+    slug: "indre-organer-og-anatomi",
     words: [
       "hjerte",
       "hjerne",
@@ -3650,6 +3731,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Kjøkkenmaskiner og hvitevarer",
+    slug: "kjokkenmaskiner-og-hvitevarer",
     words: [
       "kjøleskap",
       "fryser",
@@ -3695,6 +3777,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Sauser og krydderblandinger",
+    slug: "sauser-og-krydderblandinger",
     words: [
       "ketchup",
       "majones",
@@ -3740,6 +3823,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Norske øyer",
+    slug: "norske-oyer",
     words: [
       "Hitra",
       "Smøla",
@@ -3785,6 +3869,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Musikkteori",
+    slug: "musikkteori",
     words: [
       "melodi",
       "rytme",
@@ -3830,6 +3915,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Tegneseriehelter",
+    slug: "tegneseriehelter",
     words: [
       "Batman",
       "Supermann",
@@ -3875,6 +3961,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Verdens øyer",
+    slug: "verdens-oyer",
     words: [
       "Grønland",
       "Madagaskar",
@@ -3920,6 +4007,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Eventyrfigurer",
+    slug: "eventyrfigurer",
     words: [
       "Askeladden",
       "Rødhette",
@@ -3965,6 +4053,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Skruer og festemidler",
+    slug: "skruer-og-festemidler",
     words: [
       "skrue",
       "spiker",
@@ -4010,6 +4099,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Smaker og smaksopplevelser",
+    slug: "smaker-og-smaksopplevelser",
     words: [
       "søt",
       "sur",
@@ -4055,6 +4145,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Nasjonaliteter",
+    slug: "nasjonaliteter",
     words: [
       "nordmann",
       "svenske",
@@ -4100,6 +4191,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Måleenheter",
+    slug: "maleenheter",
     words: [
       "meter",
       "kilogram",
@@ -4145,6 +4237,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Personlighetstrekk",
+    slug: "personlighetstrekk",
     words: [
       "utadvendt",
       "innadvendt",
@@ -4190,6 +4283,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Landemerker og vidundere",
+    slug: "landemerker-og-vidundere",
     words: [
       "Eiffeltårnet",
       "Frihetsgudinnen",
@@ -4235,6 +4329,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Vitenskapsfolk og oppfinnere",
+    slug: "vitenskapsfolk-og-oppfinnere",
     words: [
       "Einstein",
       "Darwin",
@@ -4280,6 +4375,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Kjemiske forbindelser",
+    slug: "kjemiske-forbindelser",
     words: [
       "karbondioksid",
       "metan",
@@ -4325,6 +4421,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Tegn og symboler",
+    slug: "tegn-og-symboler",
     words: [
       "pluss",
       "minus",
@@ -4370,6 +4467,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Afrikanske land",
+    slug: "afrikanske-land",
     words: [
       "Algerie",
       "Tunisia",
@@ -4415,6 +4513,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Asiatiske land",
+    slug: "asiatiske-land",
     words: [
       "Kasakhstan",
       "Usbekistan",
@@ -4460,6 +4559,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Amerikanske delstater",
+    slug: "amerikanske-delstater",
     words: [
       "California",
       "Texas",
@@ -4505,6 +4605,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Bibelske skikkelser",
+    slug: "bibelske-skikkelser",
     words: [
       "Adam",
       "Eva",
@@ -4550,6 +4651,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Skader og førstehjelp",
+    slug: "skader-og-forstehjelp",
     words: [
       "brudd",
       "forstuing",
@@ -4595,6 +4697,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Matlagingsteknikker",
+    slug: "matlagingsteknikker",
     words: [
       "koke",
       "steke",
@@ -4640,6 +4743,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Kommunikasjonsverb",
+    slug: "kommunikasjonsverb",
     words: [
       "snakke",
       "si",
@@ -4685,6 +4789,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Mentale verb",
+    slug: "mentale-verb",
     words: [
       "tenke",
       "tro",
@@ -4730,6 +4835,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Politiske begreper",
+    slug: "politiske-begreper",
     words: [
       "demokrati",
       "diktatur",
@@ -4775,6 +4881,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Arbeidsverb",
+    slug: "arbeidsverb",
     words: [
       "lage",
       "bygge",
@@ -4820,6 +4927,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Muskler og knokler",
+    slug: "muskler-og-knokler",
     words: [
       "biceps",
       "triceps",
@@ -4865,6 +4973,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Dataspill",
+    slug: "dataspill",
     words: [
       "Tetris",
       "Pac-Man",
@@ -4910,6 +5019,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Økonomibegreper",
+    slug: "okonomibegreper",
     words: [
       "aksje",
       "obligasjon",
@@ -4955,6 +5065,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Juridiske begreper",
+    slug: "juridiske-begreper",
     words: [
       "lov",
       "rett",
@@ -5000,6 +5111,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Bygningsdeler",
+    slug: "bygningsdeler",
     words: [
       "tak",
       "vegg",
@@ -5045,6 +5157,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Sosiale medier og internett",
+    slug: "sosiale-medier-og-internett",
     words: [
       "Facebook",
       "Instagram",
@@ -5090,6 +5203,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Sanseverb",
+    slug: "sanseverb",
     words: [
       "se",
       "høre",
@@ -5135,6 +5249,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Cocktailer",
+    slug: "cocktailer",
     words: [
       "negroni",
       "daiquiri",
@@ -5180,6 +5295,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Druer og vinsorter",
+    slug: "druer-og-vinsorter",
     words: [
       "chardonnay",
       "sauvignon blanc",
@@ -5225,6 +5341,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Lydverb",
+    slug: "lydverb",
     words: [
       "knirke",
       "knase",
@@ -5270,6 +5387,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Internasjonale organisasjoner",
+    slug: "internasjonale-organisasjoner",
     words: [
       "FN",
       "NATO",
@@ -5315,6 +5433,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Sjøfart og båtdeler",
+    slug: "sjofart-og-batdeler",
     words: [
       "baug",
       "akterstavn",
@@ -5360,6 +5479,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Operaer og musikaler",
+    slug: "operaer-og-musikaler",
     words: [
       "Carmen",
       "Aida",
@@ -5405,6 +5525,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Vulkaner",
+    slug: "vulkaner",
     words: [
       "Krakatau",
       "Pinatubo",
@@ -5450,6 +5571,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Pokémon",
+    slug: "pokemon",
     words: [
       "Pikachu",
       "Bulbasaur",
@@ -5495,6 +5617,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Harry Potter-universet",
+    slug: "harry-potter-universet",
     words: [
       "Harry",
       "Ron",
@@ -5540,6 +5663,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Brødtyper",
+    slug: "brodtyper",
     words: [
       "loff",
       "rundstykke",
@@ -5585,6 +5709,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Supper",
+    slug: "supper",
     words: [
       "tomatsuppe",
       "løksuppe",
@@ -5630,6 +5755,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Øltyper",
+    slug: "oltyper",
     words: [
       "pils",
       "ale",
@@ -5675,6 +5801,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Plantedeler",
+    slug: "plantedeler",
     words: [
       "rot",
       "stengel",
@@ -5720,6 +5847,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Tetyper",
+    slug: "tetyper",
     words: [
       "grønn te",
       "svart te",
@@ -5765,6 +5893,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Spiselig sopp og giftsopp",
+    slug: "spiselig-sopp-og-giftsopp",
     words: [
       "kantarell",
       "steinsopp",
@@ -5810,6 +5939,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Oppdagere og eventyrere",
+    slug: "oppdagere-og-eventyrere",
     words: [
       "Columbus",
       "Magellan",
@@ -5855,6 +5985,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Slott og palasser",
+    slug: "slott-og-palasser",
     words: [
       "Windsor",
       "Balmoral",
@@ -5900,6 +6031,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "TV-serier",
+    slug: "tv-serier",
     words: [
       "Friends",
       "Seinfeld",
@@ -5945,6 +6077,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Motorsykkel- og lastebilmerker",
+    slug: "motorsykkel-og-lastebilmerker",
     words: [
       "Harley-Davidson",
       "Ducati",
@@ -5990,6 +6123,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Fysikkbegreper",
+    slug: "fysikkbegreper",
     words: [
       "kraft",
       "energi",
@@ -6035,6 +6169,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Biologibegreper",
+    slug: "biologibegreper",
     words: [
       "celle",
       "cellekjerne",
@@ -6080,6 +6215,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Matematiske begreper",
+    slug: "matematiske-begreper",
     words: [
       "addisjon",
       "subtraksjon",
@@ -6125,6 +6261,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Norske kommuner",
+    slug: "norske-kommuner",
     words: [
       "Bærum",
       "Asker",
@@ -6170,6 +6307,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Teknologi og dingser",
+    slug: "teknologi-og-dingser",
     words: [
       "datamaskin",
       "laptop",
@@ -6215,6 +6353,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Leker",
+    slug: "leker",
     words: [
       "dukke",
       "bamse",
@@ -6260,6 +6399,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Kosmetikk og hygiene",
+    slug: "kosmetikk-og-hygiene",
     words: [
       "såpe",
       "sjampo",
@@ -6305,6 +6445,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Våpen og stridsutstyr",
+    slug: "vapen-og-stridsutstyr",
     words: [
       "sverd",
       "dolk",
@@ -6350,6 +6491,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Fotballspillere",
+    slug: "fotballspillere",
     words: [
       "Pelé",
       "Maradona",
@@ -6395,6 +6537,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Rockeband",
+    slug: "rockeband",
     words: [
       "Beatles",
       "Rolling Stones",
@@ -6440,6 +6583,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Popartister",
+    slug: "popartister",
     words: [
       "Madonna",
       "Michael Jackson",
@@ -6485,6 +6629,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Filmregissører",
+    slug: "filmregissorer",
     words: [
       "Spielberg",
       "Scorsese",
@@ -6530,6 +6675,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Skuespillere",
+    slug: "skuespillere",
     words: [
       "DiCaprio",
       "Pitt",
@@ -6575,6 +6721,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Ballett og dansebegreper",
+    slug: "ballett-og-dansebegreper",
     words: [
       "Svanesjøen",
       "Nøtteknekkeren",
@@ -6620,6 +6767,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Klassiske filmer",
+    slug: "klassiske-filmer",
     words: [
       "Casablanca",
       "Citizen Kane",
@@ -6665,6 +6813,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Kampsportarter",
+    slug: "kampsportarter",
     words: [
       "aikido",
       "kung fu",
@@ -6710,6 +6859,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Husdyr og kjæledyr",
+    slug: "husdyr-og-kjaeledyr",
     words: [
       "hund",
       "katt",
@@ -6755,6 +6905,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Filosofer",
+    slug: "filosofer",
     words: [
       "Kant",
       "Hegel",
@@ -6800,6 +6951,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Vikingtidsord",
+    slug: "vikingtidsord",
     words: [
       "viking",
       "langskip",
@@ -6845,6 +6997,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Legemidler og medisiner",
+    slug: "legemidler-og-medisiner",
     words: [
       "antibiotika",
       "vaksine",
@@ -6890,6 +7043,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Teknologiselskaper",
+    slug: "teknologiselskaper",
     words: [
       "Apple",
       "Microsoft",
@@ -6935,6 +7089,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Stueplanter",
+    slug: "stueplanter",
     words: [
       "monstera",
       "fikus",
@@ -6980,6 +7135,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Motehus og luksusmerker",
+    slug: "motehus-og-luksusmerker",
     words: [
       "Dior",
       "Givenchy",
@@ -7025,6 +7181,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Bilmodeller",
+    slug: "bilmodeller",
     words: [
       "Corvette",
       "Beetle",
@@ -7070,6 +7227,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Norske nasjonalparker",
+    slug: "norske-nasjonalparker",
     words: [
       "Femundsmarka",
       "Børgefjell",
@@ -7115,6 +7273,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Verdens kjente broer",
+    slug: "verdens-kjente-broer",
     words: [
       "Brooklyn Bridge",
       "Akashi Kaikyo",
@@ -7160,6 +7319,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Verdens kjente museer",
+    slug: "verdens-kjente-museer",
     words: [
       "Prado",
       "Uffizi",
@@ -7205,6 +7365,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Star Wars-universet",
+    slug: "star-wars-universet",
     words: [
       "Luke Skywalker",
       "Darth Vader",
@@ -7250,6 +7411,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Ringenes Herre-universet",
+    slug: "ringenes-herre-universet",
     words: [
       "Frodo",
       "Gandalf",
@@ -7295,6 +7457,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Disney- og Pixar-figurer",
+    slug: "disney-og-pixar-figurer",
     words: [
       "Mikke Mus",
       "Minni Mus",
@@ -7340,6 +7503,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Norske idrettsstjerner",
+    slug: "norske-idrettsstjerner",
     words: [
       "Magnus Carlsen",
       "Martin Ødegaard",
@@ -7385,6 +7549,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Game of Thrones-universet",
+    slug: "game-of-thrones-universet",
     words: [
       "Jon Snow",
       "Daenerys Targaryen",
@@ -7430,6 +7595,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Norske artister og band",
+    slug: "norske-artister-og-band",
     words: [
       "a-ha",
       "Kygo",
@@ -7475,6 +7641,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Norske merkevarer og bedrifter",
+    slug: "norske-merkevarer-og-bedrifter",
     words: [
       "Telenor",
       "Equinor",
@@ -7520,6 +7687,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Norske politikere",
+    slug: "norske-politikere",
     words: [
       "Jonas Gahr Støre",
       "Erna Solberg",
@@ -7565,6 +7733,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Norske turmål og naturperler",
+    slug: "norske-turmal-og-naturperler",
     words: [
       "Kjerag",
       "Trollstigen",
@@ -7610,6 +7779,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Norske barnebok- og TV-figurer",
+    slug: "norske-barnebok-og-tv-figurer",
     words: [
       "Reodor Felgen",
       "Solan Gundersen",
@@ -7624,37 +7794,38 @@ export const CATEGORIES: Category[] = [
       "Morten Skogmus",
       "Brumlemann",
       "Petronella",
-      "Marabu",
+      "Bakermester Harepus",
+      "Bestemor Skogmus",
       "Pinky",
       "Langemann",
       "Grusomme Gabriel",
       "Benjamin",
-      "Veslemøy",
+      "Skalken",
+      "Pysa",
       "Sunniva",
       "Doktor Proktor",
       "Bulle",
       "Lise",
-      "Ruff",
       "Alfons Åberg",
       "Emanuel Desperado",
+      "Rudolf Blodstrupmoen",
+      "Ben Redic Fy Fazan",
       "Frimand Pløsen",
       "Mysil Bergsprekken",
       "Kamomilla",
-      "Bertrand",
-      "Remo",
+      "Barberer Sørensen",
+      "Trikkefører Syversen",
       "Max",
-      "Fabian",
-      "Kaia",
       "Bjarne Betjent",
-      "Sonja",
-      "Vetle",
       "Kurt",
       "Lillebror",
       "Bø",
+      "Bæ",
     ],
   },
   {
     name: "Simpsons-figurer",
+    slug: "simpsons-figurer",
     words: [
       "Homer Simpson",
       "Marge Simpson",
@@ -7700,6 +7871,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     name: "Historiske herskere",
+    slug: "historiske-herskere",
     words: [
       "Napoleon",
       "Julius Cæsar",

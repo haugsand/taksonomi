@@ -9,6 +9,26 @@ export async function fetchNewGame(groups: number, wordsPerGroup: number): Promi
   return data.categories;
 }
 
+/** Short explanations of a category's words, keyed by word. */
+export type Descriptions = Record<string, string>;
+
+/**
+ * A category's description bundle — a static asset, not an API call.
+ *
+ * The bundles are emitted by scripts/build-categories.mjs and never change for
+ * a given slug, so they are cheap to fetch on demand and free on every fetch
+ * after the first. Keeping them out of the board payload matters: an XXXL board
+ * is 1600 words, and inlining their descriptions would multiply a `no-store`
+ * response that every new game pays for.
+ */
+export async function fetchDescriptions(slug: string): Promise<Descriptions> {
+  const res = await fetch(`/descriptions/${encodeURIComponent(slug)}.json`);
+  if (!res.ok) {
+    throw new Error(`Kunne ikke hente beskrivelser (${res.status})`);
+  }
+  return (await res.json()) as Descriptions;
+}
+
 export type DailyGame = { date: string; categories: Category[] };
 
 /**

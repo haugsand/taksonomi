@@ -16,6 +16,11 @@ dist-ssr
 .nitro
 *.local
 
+# Hemmeligheter. Bare et sikkerhetsnett — API-nøkkelen til
+# scripts/generate-descriptions.mjs hører hjemme i skallet, ikke i repoet.
+.env
+.env.*
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
