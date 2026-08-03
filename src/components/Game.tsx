@@ -25,6 +25,7 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useAnnouncer } from "@/hooks/useAnnouncer";
 import { useTimerDisplay } from "@/hooks/useTimerDisplay";
 import { usePageVisible } from "@/hooks/usePageVisible";
+import { prefetchDescriptions } from "@/hooks/useDescriptions";
 import { MISMATCH, categoryCompleted, gameCompleted, merged } from "@/lib/announce";
 import { PREFETCH_REFILL_MS, animationVars, timings } from "@/lib/constants";
 import type { GameSize } from "@/lib/sizes";
@@ -269,6 +270,26 @@ export function Game() {
 
   const completedCount = useMemo(() => countCompleted(tiles, catByName), [tiles, catByName]);
   const done = activeCategories.length > 0 && completedCount === activeCategories.length;
+
+  // Pull each category's word descriptions the moment it is solved, rather than
+  // when its chip is clicked on the finished board. Nothing is spoiled — the
+  // player has just seen every word in it — and it turns a fetch the modal was
+  // racing into one that finished minutes ago.
+  //
+  // Keyed on the count rather than fired from combine(), so a game restored
+  // from storage primes the categories that were solved before this component
+  // ever mounted. Tiles come from the ref: the set of *completed* ones only
+  // ever changes when the count does, so re-running on every drag would be
+  // wasted work. prefetchDescriptions is idempotent, so the repeated walk over
+  // already-primed categories costs a map lookup each.
+  useEffect(() => {
+    if (completedCount === 0) return;
+    for (const tile of tilesRef.current) {
+      if (isTileComplete(tile, catByName)) {
+        prefetchDescriptions(catByName.get(tile.categoryName)?.slug);
+      }
+    }
+  }, [completedCount, catByName]);
 
   // The clock runs only while a daily board is actually playable. Opening the
   // menu pauses it: the sheet covers the board completely (the dialog backdrop

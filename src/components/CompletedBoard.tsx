@@ -37,8 +37,10 @@ export function CompletedBoard({ categories, rowCount, boardRef }: Props) {
                 key={cat.name}
                 type="button"
                 className="completed-category"
-                // Hover and focus start the fetch before the click does, so the
-                // descriptions have usually landed by the time the modal opens.
+                // A safety net, not the main path: Game primed every category
+                // as it was solved. This retries the one case that leaves a
+                // gap — a prefetch that failed, which is deliberately not
+                // cached as a failure.
                 onMouseEnter={() => load(cat.slug)}
                 onFocus={() => load(cat.slug)}
                 onClick={() => {

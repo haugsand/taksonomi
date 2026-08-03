@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRef, render } from "preact";
 import { act } from "preact/test-utils";
 import type { Category } from "@/lib/types";
+import { prefetchDescriptions, resetDescriptions } from "@/hooks/useDescriptions";
 import { CompletedBoard } from "./CompletedBoard";
 
 const DESCRIBED: Category = {
@@ -55,6 +56,9 @@ function pairs(): [string, string | undefined][] {
 
 describe("CompletedBoard", () => {
   beforeEach(() => {
+    // The cache outlives any one component by design, so it also outlives a
+    // test. Without this, one test's fetch satisfies the next one's assertion.
+    resetDescriptions();
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => new Response(JSON.stringify(BUNDLE), { status: 200 })),
@@ -102,6 +106,24 @@ describe("CompletedBoard", () => {
     await open("Kjemiske grunnstoffer");
     await open("Kjemiske grunnstoffer");
 
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("uses descriptions prefetched during play, without fetching again", async () => {
+    // What Game does the moment the category is solved, long before this board
+    // exists. The point of the module-level cache: the modal opens on data that
+    // is already here, rather than starting a request it has to race.
+    prefetchDescriptions(DESCRIBED.slug);
+    await settle();
+    expect(fetch).toHaveBeenCalledTimes(1);
+
+    mount([DESCRIBED]);
+    await open("Kjemiske grunnstoffer");
+
+    expect(pairs()).toEqual([
+      ["jern", BUNDLE.jern],
+      ["kobber", BUNDLE.kobber],
+    ]);
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 
