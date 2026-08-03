@@ -60,14 +60,31 @@
     transform: scale(0.6);
   }
 }
+/* A solved category leaving the board: the pill swells a touch, then collapses
+   into its own centre. Keeping its contents as-is (see Tile.tsx) means what
+   shrinks away is the pill the player built, not a summary chip that replaced
+   it a frame earlier. */
 @keyframes tile-fadeout {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  22% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+/* Reduced motion: same disappearance, none of the travel. */
+@keyframes tile-fadeout-flat {
   from {
     opacity: 1;
-    transform: scale(1);
   }
   to {
     opacity: 0;
-    transform: scale(var(--tile-fade-scale));
   }
 }
 
@@ -76,13 +93,12 @@
   pointer-events: none;
 }
 
-/* A tile whose category just completed: fades out in place while growing (see
-   --tile-fade-scale), staying in the flex flow. z-index lifts it above its
-   neighbours as it grows over them. */
+/* A tile whose category just completed: shrinks into its centre point, staying
+   in the flex flow so its slot is held until the animation ends and the tile
+   hides. */
 .tile--fadeout {
-  animation: tile-fadeout var(--tile-fadeout-duration) ease both;
+  animation: tile-fadeout var(--tile-fadeout-duration) cubic-bezier(0.4, 0, 0.7, 1) both;
   pointer-events: none;
-  z-index: 5;
 }
 
 /* No reduced-motion duration overrides live here on purpose. Durations come
@@ -119,6 +135,10 @@
   --background-luminance-dark: 0.25;
 }
 
+/* The 18rem cap holds for a completed tile too. It used to swap its words for
+   the category name and lifted the cap to fit it; it now keeps its words
+   (Tile.tsx), so an exemption would snap the pill wider for the one frame
+   before it starts shrinking, shoving its neighbours along the row. */
 .tile--group {
   --background-chroma-light: 0.09;
   --background-chroma-dark: 0.18;
@@ -134,15 +154,11 @@
   );
 }
 
-.tile--group.tile--complete {
-  max-width: none;
-}
-
-.tile--complete,
-.tile--group.tile--complete {
-  --group-hue: var(--default-hue);
-  box-shadow: none;
-}
+/* .tile--complete carries no styling of its own. It used to neutralise the hue
+   back to --default-hue, from when the completed pill became a grey summary
+   chip; the pill now keeps the category's colour all the way down to scale(0),
+   so the last thing you see is the group you built. Tile.tsx still sets the
+   inline --group-hue on it — that is what makes this work. */
 
 .tile__words {
   min-width: 0;
@@ -151,13 +167,14 @@
   white-space: nowrap;
 }
 
-.tile__name {
-  font-weight: 700;
-}
-
-.tile__sep {
-  opacity: 0.7;
-  margin-left: 0.25rem;
+/* Applied by useRowReflow while a tile slides into the gap a departed neighbour
+   left behind. --tile-shift-index is the tile's place in the queue along its own
+   row, counted from the gap, so the row closes as a ripple. It is capped because
+   the step is per tile: a 40-wide row would otherwise still be settling most of
+   a second later, and the ripple would read as lag. */
+.tile--shift {
+  transition: transform var(--tile-shift-duration) cubic-bezier(0.25, 0.1, 0.25, 1)
+    calc(var(--tile-shift-step) * min(var(--tile-shift-index, 0), 8));
 }
 
 .tile--selected,
@@ -168,7 +185,7 @@
 }
 
 .tile--merged {
-  animation: tile-pop var(--tile-pop-duration) cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: tile-pop var(--tile-pop-duration) ease-out;
   z-index: 2;
 }
 
@@ -179,7 +196,7 @@
 /* The outline box gives the reduced-motion flash something to tint; it is
    transparent otherwise, so it costs nothing during a normal shake. */
 .tile--shake {
-  animation: tile-shake var(--tile-shake-duration);
+  animation: tile-shake var(--tile-shake-duration) ease-out;
   outline: 2px solid transparent;
   outline-offset: 1px;
 }
@@ -190,6 +207,20 @@
   .tile--shake {
     animation-name: tile-flag;
     animation-fill-mode: both;
+  }
+
+  /* The pop-in starts at scale(0)/opacity 0. Squashed to the reduced-motion
+     duration that is a frame of invisible tile, not a subtler animation — so
+     drop it entirely and let the merged tile just be there. The live region
+     still announces the merge. */
+  .tile--merged {
+    animation-name: none;
+  }
+
+  /* The collapse-to-nothing is motion; the disappearance is not. Keep the
+     second, drop the first. */
+  .tile--fadeout {
+    animation-name: tile-fadeout-flat;
   }
 }
 
@@ -202,34 +233,52 @@
   font-weight: 700;
 }
 
+/* A merge that isn't allowed: the tiles shake off in a damped side-to-side
+   wobble, dipping in opacity on the first throw so the rejection reads even at
+   the edge of vision. */
 @keyframes tile-shake {
   0%,
   100% {
     transform: translateX(0);
+    opacity: 1;
   }
-  25% {
-    transform: translateX(-5px);
+  13% {
+    transform: translateX(-8px);
+    opacity: 0.7;
   }
-  75% {
-    transform: translateX(5px);
+  26% {
+    transform: translateX(8px);
+  }
+  40% {
+    transform: translateX(-6px);
+  }
+  53% {
+    transform: translateX(6px);
+  }
+  66% {
+    transform: translateX(-3px);
+  }
+  79% {
+    transform: translateX(3px);
   }
 }
 
+/* A merge that didn't complete a category: the combined tile pops in from
+   nothing and settles with a bounce. It replaces two tiles that just
+   disappeared, so it starts at scale(0) rather than pulsing from full size. */
 @keyframes tile-pop {
   0% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 oklch(0.78 0.2 150 / 0.6);
+    transform: scale(0);
+    opacity: 0;
   }
-  35% {
-    transform: scale(1.25) rotate(-2deg);
-    box-shadow: 0 0 0 10px oklch(0.78 0.2 150 / 0.35);
+  33% {
+    transform: scale(1.12);
+    opacity: 1;
   }
-  65% {
-    transform: scale(1.15) rotate(1.5deg);
-    box-shadow: 0 0 0 18px oklch(0.78 0.2 150 / 0);
+  67% {
+    transform: scale(0.95);
   }
   100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 oklch(0.78 0.2 150 / 0);
   }
 }

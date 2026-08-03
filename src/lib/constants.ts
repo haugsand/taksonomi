@@ -32,15 +32,23 @@ export type Timings = {
   leaveMaxStep: number;
   /** Duration of a single tile's leave animation. */
   leaveAnim: number;
-  /** Merge "pop" played when a merge does not complete a category;
+  /** Merge "pop-in" played when a merge does not complete a category;
    *  useTileCompletion waits this long before clearing the merged state. */
   pop: number;
-  /** Mismatch feedback: a shake, or a colour flash under reduced motion. */
+  /** Mismatch feedback: a damped wobble, or a colour flash under reduced
+   *  motion. Both profiles share the value — see REDUCED below. */
   shake: number;
-  /** Fade-out of a completed category's tile. */
+  /** Collapse of a completed category's tile into its centre point. */
   fadeout: number;
-  /** Scale a completed tile grows to while it fades out, in place. */
-  fadeScale: number;
+  /** How long a tile takes to slide into the gap a departed neighbour left. */
+  shift: number;
+  /** Added to that slide per tile along the row, so it closes as a ripple
+   *  rather than as one block. Capped in Tile.css — see .tile--shift. */
+  shiftStep: number;
+  /** How long the rows below a vanished row take to rise into its place. */
+  rowShift: number;
+  /** Held before they start, so the row finishes emptying first. */
+  rowShiftDelay: number;
   /** Pause between the result appearing and the solved categories filling in
    *  under it, and the duration of their fade. One value for both, so the JS
    *  timer that schedules the reveal and the CSS that animates it agree. */
@@ -54,23 +62,30 @@ const FULL: Timings = {
   leaveWindow: 350,
   leaveMaxStep: 16,
   leaveAnim: 250,
-  pop: 550,
-  shake: 400,
-  fadeout: 3000,
-  fadeScale: 5,
+  pop: 450,
+  shake: 380,
+  fadeout: 450,
+  shift: 350,
+  shiftStep: 20,
+  rowShift: 350,
+  rowShiftDelay: 450,
   reveal: 1200,
 };
 
 /**
  * Reduced motion: no travel and no staggering, but not simply zero.
  *
- *  - `fadeout: 200` keeps a completed category on screen just long enough to
- *    read what you solved. That is a pause, not motion.
- *  - `shake: 400` is unchanged: the mismatch animation becomes a colour flash
- *    (Tile.css), which still needs its duration. Removing it outright would
- *    leave reduced-motion players with no mismatch feedback at all beyond the
- *    live region.
- *  - `fadeScale: 1` cancels the grow-while-fading, which is the motion part.
+ *  - `fadeout: 200` keeps a solved category on screen a beat before it goes.
+ *    That is a pause, not motion — and the collapse-to-nothing it would
+ *    otherwise animate is swapped for a plain fade in Tile.css.
+ *  - `shake` matches the full profile: the mismatch animation becomes a colour
+ *    flash (Tile.css), which still needs its duration. Removing it outright
+ *    would leave reduced-motion players with no mismatch feedback at all beyond
+ *    the live region. Keep the two in step — a reduced value longer than the
+ *    full one is nonsense, and the flash wants the full window to be read.
+ *  - `shift`/`rowShift` at 1ms with no step or delay snaps the board shut
+ *    instead of sliding it. The FLIP in useBoardReflow still runs; it just
+ *    lands within a frame.
  *  - 1ms rather than 0 for the animations, so `animation-fill-mode: both`
  *    still resolves to the end state.
  */
@@ -82,9 +97,12 @@ const REDUCED: Timings = {
   leaveMaxStep: 0,
   leaveAnim: 1,
   pop: 1,
-  shake: 400,
+  shake: 380,
   fadeout: 200,
-  fadeScale: 1,
+  shift: 1,
+  shiftStep: 0,
+  rowShift: 1,
+  rowShiftDelay: 0,
   reveal: 200,
 };
 
@@ -102,7 +120,10 @@ export function animationVars(t: Timings): Record<string, string> {
     "--tile-pop-duration": `${t.pop}ms`,
     "--tile-shake-duration": `${t.shake}ms`,
     "--tile-fadeout-duration": `${t.fadeout}ms`,
-    "--tile-fade-scale": `${t.fadeScale}`,
+    "--tile-shift-duration": `${t.shift}ms`,
+    "--tile-shift-step": `${t.shiftStep}ms`,
+    "--row-shift-duration": `${t.rowShift}ms`,
+    "--row-shift-delay": `${t.rowShiftDelay}ms`,
     "--reveal-duration": `${t.reveal}ms`,
   };
 }

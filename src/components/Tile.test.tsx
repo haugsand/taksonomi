@@ -28,7 +28,6 @@ function mount(tile: Partial<TileData>, props: Record<string, unknown> = {}) {
         isMerged={false}
         isDragging={false}
         isDragOver={false}
-        isExpanded={false}
         disabled={false}
         onClick={() => {}}
         onDragStart={() => {}}

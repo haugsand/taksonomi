@@ -74,7 +74,6 @@ export function Game() {
   // The tile the last merge produced, so the keyboard cursor can follow it
   // rather than being left pointing at a tile that no longer exists.
   const [mergedTileId, setMergedTileId] = useState<string | null>(null);
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [enterDelays, setEnterDelays] = useState<Map<string, number> | null>(null);
   const [leavingDelays, setLeavingDelays] = useState<Map<string, number> | null>(null);
   // The finished game arrives in two beats: the result takes over the empty
@@ -180,7 +179,6 @@ export function Game() {
       setActiveCategories(categories);
       setTiles(shuffled);
       setEnterDelays(delays);
-      setExpandedIds(new Set());
       // Drop the entrance delays once the animation is done so later re-renders
       // don't replay it.
       setTimeout(() => setEnterDelays((cur) => (cur === delays ? null : cur)), totalMs);
@@ -504,7 +502,6 @@ export function Game() {
           shakeIds={shakeIds}
           justMergedIds={completion.justMergedIds}
           fadingOutIds={completion.fadingOutIds}
-          expandedIds={expandedIds}
           enterDelays={enterDelays}
           leavingDelays={leavingDelays}
           done={done}

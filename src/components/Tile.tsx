@@ -17,7 +17,6 @@ type Props = {
   isMerged: boolean;
   isDragging: boolean;
   isDragOver: boolean;
-  isExpanded: boolean;
   disabled: boolean;
   /** When set, the tile animates in with this delay (ms) — used on new game. */
   enterDelay?: number;
@@ -50,7 +49,6 @@ export function Tile(props: Props) {
     isMerged,
     isDragging,
     isDragOver,
-    isExpanded,
     disabled,
     enterDelay,
     leaveDelay,
@@ -75,13 +73,13 @@ export function Tile(props: Props) {
   else if (enterDelay !== undefined) classes.push("tile--enter");
 
   const style: CSSProperties = {};
-  if (!isComplete && tile.hue !== undefined) {
+  // Kept on a completed tile too, so it holds the category's colour while it
+  // shrinks away rather than greying out a frame before it goes.
+  if (tile.hue !== undefined) {
     (style as Record<string, unknown>)["--group-hue"] = tile.hue;
   }
   const animDelay = leaveDelay ?? enterDelay;
   if (animDelay !== undefined) style.animationDelay = `${animDelay}ms`;
-
-  const showWords = !isComplete || isExpanded;
 
   // The tile id embeds the category name ("Kjemiske grunnstoffer::hydrogen"),
   // so it must not reach the DOM: it was rendered as data-tile-id, read by
@@ -109,13 +107,11 @@ export function Tile(props: Props) {
       onDragLeave={props.onDragLeave}
       onDrop={props.onDrop}
     >
-      {isComplete && <span className="tile__name">{categoryName}</span>}
-      {showWords && (
-        <span className="tile__words">
-          {isComplete && <span className="tile__sep"> · </span>}
-          {tile.words.join(" · ")}
-        </span>
-      )}
+      {/* A completed tile keeps its words and shrinks away with them. It used
+          to replace them with the category name and linger for three seconds;
+          the name now lives only on the finished-game board (CompletedBoard)
+          and in the label below. */}
+      <span className="tile__words">{tile.words.join(" · ")}</span>
       {isGroup && !isComplete && (
         <span className="tile__progress">
           {tile.words.length}/{categorySize}

@@ -2,6 +2,7 @@ import type { RefObject } from "preact";
 import type { Category, TileData } from "@/lib/types";
 import { useTileDrag } from "@/hooks/useTileDrag";
 import { useBoardKeyboard } from "@/hooks/useBoardKeyboard";
+import { useBoardReflow } from "@/hooks/useBoardReflow";
 import { Board } from "./Board";
 import { Tile } from "./Tile";
 
@@ -13,7 +14,6 @@ type Props = {
   shakeIds: string[];
   justMergedIds: Set<string>;
   fadingOutIds: Set<string>;
-  expandedIds: Set<string>;
   enterDelays: Map<string, number> | null;
   leavingDelays: Map<string, number> | null;
   done: boolean;
@@ -36,7 +36,6 @@ export function TileGrid(props: Props) {
     shakeIds,
     justMergedIds,
     fadingOutIds,
-    expandedIds,
     enterDelays,
     leavingDelays,
     done,
@@ -53,6 +52,7 @@ export function TileGrid(props: Props) {
     onEscape: onClearSelection,
     cursorTileId: mergedTileId,
   });
+  const { measureTile, measureRow } = useBoardReflow(rows);
 
   const renderTile = (t: TileData) => {
     const cat = catByName.get(t.categoryName);
@@ -62,7 +62,10 @@ export function TileGrid(props: Props) {
         key={t.id}
         tile={t}
         isTabbable={t.id === tabbableId}
-        elementRef={(el) => registerTile(t.id, el)}
+        elementRef={(el) => {
+          registerTile(t.id, el);
+          measureTile(t.id, el);
+        }}
         onFocus={() => onTileFocus(t.id)}
         enterDelay={enterDelays?.get(t.id)}
         leaveDelay={leavingDelays?.get(t.id)}
@@ -72,7 +75,6 @@ export function TileGrid(props: Props) {
         isSelected={selectedId === t.id}
         isShaking={shakeIds.includes(t.id)}
         isMerged={justMergedIds.has(t.id)}
-        isExpanded={expandedIds.has(t.id)}
         disabled={done || loading}
         onClick={() => onTileClick(t.id)}
         {...getTileDragProps(t.id)}
@@ -86,11 +88,19 @@ export function TileGrid(props: Props) {
     // beats 1600.
     <div onKeyDown={onKeyDown} className="tile-grid">
       <Board boardRef={boardRef} ariaLabel="Spillebrett">
-        {rows.map((row, i) => (
-          <div key={i} className="board__row">
-            {row.map(renderTile)}
-          </div>
-        ))}
+        {rows.map((row, i) => {
+          // Keyed by the row's own index, not its place in the array. Once a
+          // row empties, groupIntoRows stops returning it, and an array-index
+          // key would hand its DOM node to the row below instead of unmounting
+          // it — every row would keep its box and swap contents, so nothing
+          // would ever move for useBoardReflow to animate.
+          const key = row[0]?.row ?? i;
+          return (
+            <div key={key} className="board__row" ref={(el) => measureRow(key, el)}>
+              {row.map(renderTile)}
+            </div>
+          );
+        })}
       </Board>
     </div>
   );

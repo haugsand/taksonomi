@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { animationVars, timings, type Timings } from "./constants";
 
-/** Every duration in a Timings profile (i.e. all of it except the unitless
- *  scale factor). Written as a Timings-keyed record so adding a field to the
- *  type forces a decision here rather than silently escaping the checks. */
+/** Every duration in a Timings profile. Written as a Timings-keyed record so
+ *  adding a field to the type forces a decision here rather than silently
+ *  escaping the checks. Every field is a duration today; a future unitless one
+ *  would be added as `false`. */
 const DURATION_KEYS: Record<keyof Timings, boolean> = {
   enterWindow: true,
   enterMaxStep: true,
@@ -14,7 +15,10 @@ const DURATION_KEYS: Record<keyof Timings, boolean> = {
   pop: true,
   shake: true,
   fadeout: true,
-  fadeScale: false,
+  shift: true,
+  shiftStep: true,
+  rowShift: true,
+  rowShiftDelay: true,
   reveal: true,
 };
 
@@ -25,10 +29,14 @@ const durations = (t: Timings) =>
 
 describe("timings", () => {
   it("keeps the full profile's staged animations", () => {
-    const t = timings(false);
-    expect(t.fadeout).toBe(3000);
-    expect(t.enterWindow).toBeGreaterThan(0);
-    expect(t.fadeScale).toBeGreaterThan(1);
+    const full = timings(false);
+    const reduced = timings(true);
+    expect(full.enterWindow).toBeGreaterThan(0);
+    expect(full.enterMaxStep).toBeGreaterThan(0);
+    // The staged animations are the ones reduced motion collapses; under full
+    // motion each must still have room to play.
+    expect(full.fadeout).toBeGreaterThan(reduced.fadeout);
+    expect(full.pop).toBeGreaterThan(reduced.pop);
   });
 
   it("collapses the long waits under reduced motion", () => {
@@ -39,10 +47,6 @@ describe("timings", () => {
     expect(t.fadeout).toBeLessThan(500);
     expect(t.enterWindow).toBe(0);
     expect(t.leaveWindow).toBe(0);
-  });
-
-  it("cancels the grow-while-fading, which is the motion part", () => {
-    expect(timings(true).fadeScale).toBe(1);
   });
 
   it("keeps the mismatch cue long enough to notice", () => {
@@ -75,12 +79,15 @@ describe("animationVars", () => {
     const vars = animationVars(timings(false));
     expect(Object.keys(vars).sort()).toEqual([
       "--reveal-duration",
+      "--row-shift-delay",
+      "--row-shift-duration",
       "--tile-enter-duration",
-      "--tile-fade-scale",
       "--tile-fadeout-duration",
       "--tile-leave-duration",
       "--tile-pop-duration",
       "--tile-shake-duration",
+      "--tile-shift-duration",
+      "--tile-shift-step",
     ]);
   });
 
@@ -90,11 +97,10 @@ describe("animationVars", () => {
     expect(animationVars(timings(true))).not.toEqual(animationVars(timings(false)));
   });
 
-  it("emits ms units for durations and a bare number for the scale", () => {
+  it("emits ms units on every duration", () => {
     const vars = animationVars(timings(true));
     for (const [name, value] of Object.entries(vars)) {
-      if (name === "--tile-fade-scale") expect(value).toMatch(/^[\d.]+$/);
-      else expect(value, name).toMatch(/^\d+ms$/);
+      expect(value, name).toMatch(/^\d+ms$/);
     }
   });
 });

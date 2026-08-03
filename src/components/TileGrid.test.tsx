@@ -50,7 +50,6 @@ function mount(rows: TileData[][] = ROWS, overrides: Record<string, unknown> = {
           shakeIds={[]}
           justMergedIds={new Set()}
           fadingOutIds={new Set()}
-          expandedIds={new Set()}
           enterDelays={null}
           leavingDelays={null}
           done={false}

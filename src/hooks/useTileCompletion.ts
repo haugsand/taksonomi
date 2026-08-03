@@ -9,7 +9,7 @@ const setWithout = (set: Set<string>, id: string): Set<string> => {
 };
 
 type Callbacks = {
-  /** Hide a tile once its fade-out has finished (it stays "solved"). */
+  /** Hide a tile once it has finished collapsing (it stays "solved"). */
   onHide: (id: string) => void;
   /** Fired when the final category's animation completes. */
   onFinal: () => void;
@@ -21,16 +21,16 @@ type Callbacks = {
 
 /**
  * Owns the post-merge tile animation lifecycle. A merge that doesn't complete a
- * category pops. A completed category skips the pop and instead fades out in
- * place while growing (see Tile.css), staying in the flex flow — so its slot is
- * held until the fade finishes, then released when it hides. State is keyed by
- * tile id so several categories completing within the same window each run an
+ * category pops in. A completed category skips the pop and instead shrinks into
+ * its centre point (see Tile.css), staying in the flex flow — so its slot is
+ * held until the collapse finishes, then released when it hides. State is keyed
+ * by tile id so several categories completing within the same window each run an
  * independent sequence.
  */
 export function useTileCompletion({ onHide, onFinal, timings }: Callbacks) {
   // Tiles currently playing the merge "pop".
   const [justMergedIds, setJustMergedIds] = useState<Set<string>>(new Set());
-  // Completed tiles currently fading out (and growing) in place.
+  // Completed tiles currently collapsing into their centre point.
   const [fadingOutIds, setFadingOutIds] = useState<Set<string>>(new Set());
 
   /** A merge that did not complete a category: just play the pop. */
@@ -39,8 +39,8 @@ export function useTileCompletion({ onHide, onFinal, timings }: Callbacks) {
     setTimeout(() => setJustMergedIds((s) => setWithout(s, id)), timings.pop);
   }
 
-  /** A merge that completed a category: immediately fade out while growing in
-   *  place, then hide (releasing its slot). No pop. */
+  /** A merge that completed a category: immediately collapse into its centre
+   *  point, then hide (releasing its slot). No pop. */
   function completeCategory(id: string, isFinal: boolean) {
     setFadingOutIds((s) => setWith(s, id));
     setTimeout(() => {

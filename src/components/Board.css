@@ -30,3 +30,13 @@
   white-space: nowrap;
   flex-shrink: 0;
 }
+
+/* Applied by useBoardReflow while the rows below a vanished row rise to fill
+   it. The delay holds them still until the last tile of that row has finished
+   collapsing, so the board closes in two beats rather than moving underneath
+   the animation that emptied it. No stagger: the rows below move as one block,
+   which is what they are. */
+.board__row--shift {
+  transition: transform var(--row-shift-duration) cubic-bezier(0.25, 0.1, 0.25, 1)
+    var(--row-shift-delay);
+}
