@@ -31,10 +31,48 @@
   }
 }
 
+/* Title left, close button hard right. `flex-start` rather than `center` is the
+   whole trick: a name long enough to wrap grows the heading downwards while the
+   button stays put, so it keeps the same offset from the modal's top-right
+   corner whether the title is one line or two. */
+.completed-category-modal__header {
+  align-self: stretch;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  /* Keeps a full-width name off the button rather than letting the two touch. */
+  gap: 1rem;
+  text-align: left;
+}
+
 .completed-category-modal__name {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 700;
+  /* Deliberately equal to the close button's height, so the ✕ is centred on the
+     first line instead of hanging below it. Any tighter and the two would need
+     a magic negative margin to line up. */
+  line-height: 1.9rem;
+}
+
+/* Matches .sheet__close, the same control on the start sheet. */
+.completed-category-modal__close {
+  flex: none;
+  width: 1.9rem;
+  height: 1.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background-color: var(--bg);
+  color: var(--fg);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.completed-category-modal__close:hover {
+  background-color: var(--surface-hover);
 }
 
 /* The word list used to be centred pills, which worked when a word was all
@@ -48,14 +86,13 @@
   text-align: left;
 }
 
-.completed-category-modal__word {
-  padding: 0.5rem 0;
-  border-top: 1px solid var(--border);
-}
-
-.completed-category-modal__word:first-child {
-  border-top: none;
-  padding-top: 0;
+/* Groups are separated by a blank line, not a rule. The word's own weight
+   already marks where a group begins, so a border between every pair was
+   furniture the list did not need. The gap is one line of description text —
+   written as the product rather than as 1.1375rem so it stays tied to the dd
+   below if either value changes. */
+.completed-category-modal__word + .completed-category-modal__word {
+  margin-top: calc(0.8125rem * 1.4);
 }
 
 .completed-category-modal__word dt {

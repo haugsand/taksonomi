@@ -56,7 +56,17 @@ export function CompletedBoard({ categories, rowCount, boardRef }: Props) {
       </Board>
       {selected && (
         <Modal ariaLabel={selected.name} onClose={() => setSelected(null)}>
-          <h2 className="completed-category-modal__name">{selected.name}</h2>
+          <div className="completed-category-modal__header">
+            <h2 className="completed-category-modal__name">{selected.name}</h2>
+            <button
+              type="button"
+              className="completed-category-modal__close"
+              aria-label="Lukk"
+              onClick={() => setSelected(null)}
+            >
+              ✕
+            </button>
+          </div>
           {/* A description list rather than a bare list: the pairing of word and
               explanation *is* the content, and <dl> is what says so to a screen
               reader. A word with no description renders as a lone <dt>, which is
