@@ -15,9 +15,9 @@ export type Descriptions = Record<string, string>;
 /**
  * A category's description bundle — a static asset, not an API call.
  *
- * The bundles are emitted by scripts/build-categories.mjs and never change for
- * a given slug, so they are cheap to fetch on demand and free on every fetch
- * after the first. Keeping them out of the board payload matters: an XXXL board
+ * The bundles live in public/descriptions/ and never change for a given slug,
+ * so they are cheap to fetch on demand and free on every fetch after the first.
+ * Keeping them out of the board payload matters: an XXXL board
  * is 1600 words, and inlining their descriptions would multiply a `no-store`
  * response that every new game pays for.
  */

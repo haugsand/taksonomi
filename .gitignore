@@ -16,8 +16,7 @@ dist-ssr
 .nitro
 *.local
 
-# Hemmeligheter. Bare et sikkerhetsnett — API-nøkkelen til
-# scripts/generate-descriptions.mjs hører hjemme i skallet, ikke i repoet.
+# Hemmeligheter. Bare et sikkerhetsnett — de hører hjemme i skallet, ikke i repoet.
 .env
 .env.*
 

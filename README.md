@@ -146,31 +146,61 @@ nettstedet.
 
 ### Kategoridataene
 
-`server/categories-data.ts` er **auto-generert og skal ikke redigeres for
-hånd.** Kilden er `scripts/data/batch*.mjs`:
+Dataene har to kilder, og begge redigeres for hånd:
 
-```bash
-node scripts/build-categories.mjs
-```
+- `server/categories-data.ts` — navn, slug og de 40 ordene i hver kategori.
+- `public/descriptions/<slug>.json` — ordforklaringene som vises når en kategori
+  er løst. Statiske assets, hentes én gang per kategori av
+  [src/lib/api.ts](src/lib/api.ts).
 
-```bash
-node scripts/build-categories.mjs --report
-```
+Fram til august 2026 ble begge generert fra rådata i `scripts/data/` av
+`scripts/build-categories.mjs`. Det byggesteget er fjernet: det hadde nådd
+endestasjonen (172 av 172 kategorier, alle med komplette beskrivelser), og holdt
+liv i ~13 600 rå ord for å produsere 6 880. Trenger du rådataene eller
+LLM-generatoren tilbake, ligger de i historikken fram til `6a31b56`.
 
-Den første er streng og må treffe målene; den andre skriver bare ut status.
-Skriptet nekter å skrive filen ved brudd på invariantene som gjør spillet
-entydig:
+Invariantene som gjør et brett entydig ligger nå i
+[server/categories-data.test.ts](server/categories-data.test.ts) og kjører på
+hver `npm test` i stedet for når noen husket å kjøre bygget:
 
-- kategorinavn er unike
-- ingen ord forekommer i mer enn én kategori (globalt, første vinner)
+- kategorinavn og slugger er unike
+- `slug` er `slugify(name)` — en slug som har drevet fra navnet sitt er en 404
 - ingen ord gjentas innenfor en kategori
-- hver kategori har minst `TARGET_WORDS` ord **etter** global dedup
-- det er nøyaktig `TARGET_CATEGORIES` kategorier
+- **ingen ord forekommer i mer enn én kategori** — den viktigste, for et ord i to
+  kategorier gjør brettet tvetydig, og det viser seg bare når begge trekkes samtidig
+- hver kategori har nøyaktig 40 ord
+- hver kategori har en beskrivelsesbunt, ingen bunt er foreldreløs, og nøklene i
+  bunten er **eksakt** ordene kategorien sender ut. Eksakt fordi
+  `CompletedBoard` slår opp med `descriptions[word]`; en nøkkel som skiller seg
+  med én stor bokstav gir ingen forklaring i det hele tatt
+- ingen beskrivelse er tom, over 90 tegn, eller bare ordet om igjen
 
-Hver rå kategori lister ord fra lettest til vanskeligst å gjette; de første 40
-beholdes, så de mest obskure faller bort. `EXCLUDE` i skriptet trimmer vekk
-kategorier uten å røre rådatafilene — fjern et navn derfra for å ta kategorien
-inn igjen.
+#### Å legge til en kategori
+
+Legg inn navn, `slugify`-et slug og 40 ord i `categories-data.ts`, skriv
+`public/descriptions/<slug>.json`, og kjør `npm test`. Testen forteller deg
+hvilke ord som kolliderer med en kategori som allerede finnes — velg andre ord.
+Ordene trenger ingen bestemt rekkefølge: brettet trekker et tilfeldig utvalg.
+
+Beskrivelsene fulgte disse reglene da de ble skrevet, og nye bør følge dem også:
+
+- Norsk bokmål, én setning, maks 90 tegn inkludert mellomrom. Hard grense.
+- Si det som skiller nettopp dette ordet fra de andre i kategorien. Ikke gjenta
+  kategorinavnet — spilleren ser det rett over.
+- Begynn ikke med ordet selv, og ikke med «En», «Et» eller «Den».
+- Vær konkret: et tall, et sted, en funksjon, et årstall. Ikke «kjent for å være
+  populær» eller annet innholdsløst fyll.
+- Skriv bare det du er trygg på. Er du usikker på en detalj, ta med det generelle
+  i stedet for å gjette på det spesifikke. En vag beskrivelse er grei; en feil er
+  det ikke.
+
+Riktig form:
+
+```
+hydrogen -> "Letteste grunnstoffet, nummer 1, symbol H."
+Portugal -> "Ligger vest for Spania, med Lisboa som hovedstad."
+Python   -> "Lansert i 1991, kjent for lesbar syntaks og innrykk som struktur."
+```
 
 ### Tema
 
