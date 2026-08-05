@@ -21,7 +21,7 @@
   "kodein": "Svakt opioid, ofte kombinert med paracetamol.",
   "tramadol": "Opioid brukt mot moderate til sterke smerter.",
   "diazepam": "Beroligende og krampeløsende middel.",
-  "ritalin": "Middel brukt ved ADHD, som virker stimulerende.",
+  "metylfenidat": "Sentralstimulerende middel som brukes mot ADHD.",
   "warfarin": "Blodfortynnende middel som krever jevnlige blodprøver.",
   "statiner": "Middelgruppe som senker kolesterolet i blodet.",
   "amoksicillin": "Mye brukt antibiotikum i penicillinfamilien.",
@@ -30,13 +30,13 @@
   "metformin": "Førstevalget mot type 2-diabetes.",
   "prednisolon": "Betennelsesdempende binyrebarkhormon i tablettform.",
   "salbutamol": "Utvider luftveiene raskt ved astmaanfall.",
-  "antabus": "Middel som gjør deg kvalm hvis du drikker alkohol.",
+  "disulfiram": "Gjør alkohol uutholdelig å drikke, brukt mot avhengighet.",
   "naproksen": "Betennelsesdempende middel med lang virketid.",
   "diklofenak": "Betennelsesdempende middel, både i tabletter og gel.",
   "oksykodon": "Sterkt opioid mot alvorlige smerter.",
   "fentanyl": "Svært sterkt opioid, mange ganger kraftigere enn morfin.",
-  "paracet": "Norsk handelsnavn på paracetamol.",
-  "voltaren": "Handelsnavn på diklofenak, mest kjent som gel.",
-  "zyrtec": "Handelsnavn på et allergimiddel av antihistamintypen.",
-  "imodium": "Handelsnavn på et middel som stanser diaré."
+  "levotyroksin": "Erstatter hormonet et lavt stoffskifte ikke lager nok av.",
+  "sertralin": "Virker mot depresjon og angst ved å øke serotoninet i hjernen.",
+  "cetirizin": "Demper rennende nese og kløe ved pollenallergi.",
+  "loperamid": "Bremser tarmen og stopper diaré."
 }

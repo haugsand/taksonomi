@@ -31,7 +31,7 @@
   "Crystal": "Har syntaks som Ruby, men kompileres og er statisk typet.",
   "Nim": "Kompilerer til C, med innrykk som struktur og lite kjøretidslag.",
   "Zig": "Ungt systemspråk som vil erstatte C, uten skjult kontrollflyt.",
-  "Ocaml": "Funksjonelt språk fra ML-familien, sterkt på typeslutning.",
+  "OCaml": "Funksjonelt språk fra ML-familien, sterkt på typeslutning.",
   "Elm": "Funksjonelt språk for nettsider, som lover ingen kjøretidsfeil.",
   "Solidity": "Skrevet for smartkontrakter på Ethereum.",
   "Matlab": "Bygget rundt matriser, standard i teknisk og numerisk analyse.",
