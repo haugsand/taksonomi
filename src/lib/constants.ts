@@ -68,8 +68,8 @@ const FULL: Timings = {
   shift: 350,
   shiftStep: 20,
   rowShift: 350,
-  rowShiftDelay: 450,
-  reveal: 1200,
+  rowShiftDelay: 0,
+  reveal: 350,
 };
 
 /**

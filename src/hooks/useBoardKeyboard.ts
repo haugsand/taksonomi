@@ -33,9 +33,10 @@ export function useBoardKeyboard({ rows, onEscape, cursorTileId = null }: Option
   const elements = useRef(new Map<string, HTMLButtonElement>());
   /** Where the cursor last was, so it can settle nearby when tiles vanish. */
   const lastPos = useRef<Pos>({ row: 0, col: 0 });
-  /** Set only by a keypress: focus follows the cursor then, never on mount or
-   *  an incidental re-render, which would steal focus from the header. */
-  const focusWanted = useRef(false);
+  /** Why focus should move, or null when it should stay put — never on mount or
+   *  an incidental re-render, which would steal focus from the header. The two
+   *  reasons want opposite scroll behaviour; see the effect that reads it. */
+  const focusWanted = useRef<"key" | "merge" | null>(null);
 
   const registerTile = useCallback((id: string, el: HTMLButtonElement | null) => {
     if (el) elements.current.set(id, el);
@@ -54,7 +55,7 @@ export function useBoardKeyboard({ rows, onEscape, cursorTileId = null }: Option
     // Removing the merged-away tiles orphans focus onto <body>. Reclaim it, but
     // only then — if focus sits anywhere else the player has moved on, and
     // yanking it back to the board would be worse than leaving it.
-    if (document.activeElement === document.body) focusWanted.current = true;
+    if (document.activeElement === document.body) focusWanted.current = "merge";
   }, [cursorTileId, rows]);
 
   // Keep the cursor on a tile that exists. Tiles leave the board whenever a
@@ -68,11 +69,20 @@ export function useBoardKeyboard({ rows, onEscape, cursorTileId = null }: Option
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, activeId]);
 
-  // Move focus after the cursor, but only when a key put it there.
+  // Move focus after the cursor, but only when a keypress or a merge put it
+  // there — and scroll only for the keypress.
+  //
+  // Arrowing off the visible edge has to scroll, or the cursor walks somewhere
+  // the player cannot see. A merge is the opposite: the player just clicked the
+  // spot, so they are already looking at it, and the tile the merge produces is
+  // wider than either tile it replaced. Click a group near the edge of a board
+  // that runs off to the right and the merged tile lands mostly outside it — a
+  // bare focus() then scrolls the board out from under the player.
   useLayoutEffect(() => {
-    if (!focusWanted.current || activeId === null) return;
-    focusWanted.current = false;
-    elements.current.get(activeId)?.focus();
+    const reason = focusWanted.current;
+    if (reason === null || activeId === null) return;
+    focusWanted.current = null;
+    elements.current.get(activeId)?.focus({ preventScroll: reason === "merge" });
   }, [activeId]);
 
   const xCenter = useCallback(
@@ -106,7 +116,7 @@ export function useBoardKeyboard({ rows, onEscape, cursorTileId = null }: Option
       // browser would scroll the page instead.
       e.preventDefault();
       lastPos.current = to;
-      focusWanted.current = true;
+      focusWanted.current = "key";
       setActiveId(rows[to.row][to.col].id);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
