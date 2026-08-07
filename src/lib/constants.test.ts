@@ -18,6 +18,7 @@ const DURATION_KEYS: Record<keyof Timings, boolean> = {
   shift: true,
   shiftStep: true,
   rowShift: true,
+  rowShiftStep: true,
   rowShiftDelay: true,
   reveal: true,
 };
@@ -81,6 +82,7 @@ describe("animationVars", () => {
       "--reveal-duration",
       "--row-shift-delay",
       "--row-shift-duration",
+      "--row-shift-step",
       "--tile-enter-duration",
       "--tile-fadeout-duration",
       "--tile-leave-duration",

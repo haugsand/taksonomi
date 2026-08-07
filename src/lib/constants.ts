@@ -47,6 +47,10 @@ export type Timings = {
   shiftStep: number;
   /** How long the rows below a vanished row take to rise into its place. */
   rowShift: number;
+  /** Added to that rise per row down the board, so they follow one another in
+   *  rather than snapping up as one block. Capped in Board.css — see
+   *  .board__row--shift. */
+  rowShiftStep: number;
   /** Held before they start, so the row finishes emptying first. */
   rowShiftDelay: number;
   /** Pause between the result appearing and the solved categories filling in
@@ -68,6 +72,7 @@ const FULL: Timings = {
   shift: 350,
   shiftStep: 20,
   rowShift: 350,
+  rowShiftStep: 24,
   rowShiftDelay: 0,
   reveal: 350,
 };
@@ -102,6 +107,7 @@ const REDUCED: Timings = {
   shift: 1,
   shiftStep: 0,
   rowShift: 1,
+  rowShiftStep: 0,
   rowShiftDelay: 0,
   reveal: 200,
 };
@@ -123,6 +129,7 @@ export function animationVars(t: Timings): Record<string, string> {
     "--tile-shift-duration": `${t.shift}ms`,
     "--tile-shift-step": `${t.shiftStep}ms`,
     "--row-shift-duration": `${t.rowShift}ms`,
+    "--row-shift-step": `${t.rowShiftStep}ms`,
     "--row-shift-delay": `${t.rowShiftDelay}ms`,
     "--reveal-duration": `${t.reveal}ms`,
   };

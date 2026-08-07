@@ -88,8 +88,10 @@ export function useBoardReflow(rows: TileData[][]) {
     void all[0].el.offsetWidth;
 
     // Play. Tiles stagger left to right within their own row, so a row closes
-    // as a ripple spreading out from the gap. Rows carry no stagger — they move
-    // as one, after the delay in .board__row--shift.
+    // as a ripple spreading out from the gap; rows stagger top to bottom, so
+    // the board draws itself up after the row that vanished rather than
+    // snapping shut in one block. Same mechanism either way — an index the
+    // stylesheet turns into a delay — just a different axis to sort along.
     const byRow = new Map<HTMLElement, Mover[]>();
     for (const m of tiles.movers) {
       const parent = m.el.parentElement;
@@ -105,7 +107,14 @@ export function useBoardReflow(rows: TileData[][]) {
         release(m.el, "tile--shift", "--tile-shift-index");
       });
     }
-    for (const m of rowsRead.movers) release(m.el, "board__row--shift");
+    // Every moving row sits below the gap it is closing, so ordering by their
+    // settled position counts outwards from it — the row that lost its
+    // neighbour leads and the rest follow it up.
+    rowsRead.movers.sort((a, b) => a.offset - b.offset);
+    rowsRead.movers.forEach((m, i) => {
+      m.el.style.setProperty("--row-shift-index", String(i));
+      release(m.el, "board__row--shift", "--row-shift-index");
+    });
   }, [rows]);
 
   return { measureTile, measureRow };
