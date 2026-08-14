@@ -6,16 +6,7 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    ignores: [
-      ".claude",
-      ".netlify",
-      "dist",
-      "node_modules",
-      ".output",
-      ".vinxi",
-      "server/categories-data.ts",
-      "scripts",
-    ],
+    ignores: [".claude", "dist", "node_modules", "server/categories-data.ts"],
   },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
@@ -29,18 +20,6 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      "no-restricted-imports": [
-        "error",
-        {
-          paths: [
-            {
-              name: "server-only",
-              message:
-                "TanStack Start does not use the Next.js `server-only` package. Rename the module to `*.server.ts` or mark it with `@tanstack/react-start/server-only`.",
-            },
-          ],
-        },
-      ],
       "@typescript-eslint/no-unused-vars": "off",
     },
   },

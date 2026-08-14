@@ -1,10 +1,4 @@
 .claude
-.netlify
 dist
 node_modules
-.output
-.vinxi
-pnpm-lock.yaml
 package-lock.json
-bun.lock
-routeTree.gen.ts
