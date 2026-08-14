@@ -6,7 +6,7 @@
     "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": true
+    "run_worker_first": true,
   },
   // Holds the decided daily boards, so a deploy of categories-data.ts partway
   // through a day cannot hand later players a different board from earlier
@@ -16,5 +16,5 @@
   //   npx wrangler kv namespace create BOARDS
   // `wrangler dev` simulates KV locally and ignores the id; `wrangler deploy`
   // refuses an id it cannot find, which is the loud failure we want.
-  "kv_namespaces": [{ "binding": "BOARDS", "id": "3762248672f14250aed75439b1fe8859" }]
+  "kv_namespaces": [{ "binding": "BOARDS", "id": "3762248672f14250aed75439b1fe8859" }],
 }

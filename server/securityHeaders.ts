@@ -18,7 +18,7 @@
  */
 
 /** sha256 of the inline theme script in index.html, base64, as CSP spells it. */
-export const THEME_SCRIPT_HASH = "sha256-qlOgOBYZZS/qRhK9/BsxlICJmFTn9Qj+zSRqm6dQaow=";
+export const THEME_SCRIPT_HASH = "sha256-NpIxpAa77FPBX04+MugI9X+IX8YQiBBCP4Q00WyXFxw=";
 
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
